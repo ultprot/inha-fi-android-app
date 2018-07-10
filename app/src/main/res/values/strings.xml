@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SMART CANE</string>
+    <string name="id">아이디</string>
+    <string name="password">비밀번호</string>
+    <string name="ok">OK</string>
+    <string name="forget">잊어버렸어요.</string>
 </resources>

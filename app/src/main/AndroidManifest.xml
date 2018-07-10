@@ -22,6 +22,7 @@
         <activity android:name=".Start" />
         <activity android:name=".Eroll" />
         <activity android:name=".InProcess"/>
+        <activity android:name=".ExecuteActivity"/>
     </application>
 
 </manifest>

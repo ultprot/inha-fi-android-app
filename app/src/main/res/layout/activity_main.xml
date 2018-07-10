@@ -1,64 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ConstraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:orientation="vertical"
-    tools:layout_editor_absoluteX="8dp"
-    tools:layout_editor_absoluteY="8dp">
+    android:background="@android:color/darker_gray"
+    android:orientation="vertical">
 
-    <Button
-        android:id="@+id/startButton"
-        style="@style/Widget.AppCompat.Button"
-        android:layout_width="111dp"
-        android:layout_height="59dp"
-        android:layout_marginEnd="7dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="7dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="96dp"
-        android:background="#bebebe"
-        android:text="START"
-        android:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.501"
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:contentDescription="@string/app_name"
+        android:layout_width="163dp"
+        android:layout_height="239dp"
+        android:layout_marginLeft="99dp"
+        android:layout_marginStart="99dp"
+        android:layout_marginTop="50dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_logo"
+        tools:layout_conversion_absoluteHeight="250dp"
+        tools:layout_conversion_absoluteWidth="360dp" />
 
-    <Button
-        android:id="@+id/Enroll"
+
+    <TextView
+        android:id="@+id/editText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="88dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Enroll"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@null"
+        android:ems="10"
+        android:fontFamily="@font/noto_sans"
+        android:gravity="center"
+        android:text="@string/app_name"
+        android:textColor="#707070"
+        android:textSize="36sp"
+        android:textStyle="normal|bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/EnrollEditText"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
+        tools:background="@null"
+        tools:layout_conversion_absoluteHeight="71dp"
+        tools:layout_conversion_absoluteWidth="360dp" />
+
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="25dp"
+        android:layout_marginLeft="109dp"
+        android:layout_marginStart="109dp"
+        android:text="@string/forget"
+        android:textColor="#707070"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_conversion_absoluteHeight="75dp"
+        tools:layout_conversion_absoluteWidth="270dp" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:contentDescription="@string/id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="22dp"
+        android:layout_marginLeft="100dp"
+        android:layout_marginStart="100dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView6"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/ic_type" />
+
+    <ImageView
+        android:id="@+id/imageView3"
+        android:contentDescription="@string/password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="100dp"
+        android:layout_marginStart="100dp"
+        android:layout_marginTop="22dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView4"
+        app:srcCompat="@drawable/ic_type" />
+
+    <ImageView
+        android:id="@+id/imageView4"
+        android:contentDescription="@string/ok"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:layout_marginLeft="22dp"
+        android:layout_marginStart="22dp"
+        app:layout_constraintBottom_toBottomOf="@+id/imageView3"
+        app:layout_constraintStart_toEndOf="@+id/imageView3"
+        app:srcCompat="@drawable/ic_ok_circle" />
 
     <EditText
-        android:id="@+id/enrollTextView"
-        style="?attr/textAppearanceListItemSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="53dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="160dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Enroll new device"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/textView4"
+        android:layout_width="143dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="109dp"
+        android:layout_marginStart="109dp"
+        android:layout_marginTop="60dp"
+        android:background="@null"
+        android:hapticFeedbackEnabled="true"
+        android:inputType="textEmailAddress"
+        android:padding="2dp"
+        android:text="@string/id"
+        android:hint="@string/id"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/startButton" />
-</LinearLayout>
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
+    <EditText
+        android:id="@+id/textView6"
+        android:layout_width="143dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="109dp"
+        android:layout_marginStart="109dp"
+        android:layout_marginTop="30dp"
+        android:background="@null"
+        android:hapticFeedbackEnabled="true"
+        android:inputType="textPassword"
+        android:padding="2dp"
+        android:text="@string/password"
+        android:hint="@string/password"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView4" />
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="28dp"
+        android:layout_height="25dp"
+        android:layout_marginLeft="50dp"
+        android:layout_marginStart="50dp"
+        android:text="@string/ok"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/textView6"
+        app:layout_constraintStart_toEndOf="@+id/textView6"
+        app:layout_constraintTop_toTopOf="@+id/textView6" />
+
+
+</android.support.constraint.ConstraintLayout>
