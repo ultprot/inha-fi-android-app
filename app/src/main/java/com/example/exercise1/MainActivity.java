@@ -20,7 +20,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent startIntent = new Intent(getApplicationContext(),Start.class);
-                startIntent.putExtra("org.examples.SOMETHING","Sucessful");
+                startIntent.putExtra("org.examples.SOMETHING","Successful");
+                //"org.examples.SOMETHING":"Successful" will transmitted to Start.class
+                //we can use it later, for transmit user's information like userid or caneid ... if we use login action
                 startActivity(startIntent);
             }
         });
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent startIntent = new Intent(getApplicationContext(),Eroll.class);
                 startIntent.putExtra("org.examples.ENROLL","enrolling");
+                //"org.examples.ENROLL":"enrolling" will transmitted to Eroll.class
                 startActivity(startIntent);
             }
         });
