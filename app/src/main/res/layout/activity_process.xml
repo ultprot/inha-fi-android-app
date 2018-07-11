@@ -57,7 +57,6 @@
 
     <EditText
         android:id="@+id/PostDataResult"
-        android:hint="@string/app_name"
         android:layout_width="316dp"
         android:layout_height="304dp"
         android:layout_marginBottom="21dp"
@@ -66,7 +65,6 @@
         android:layout_marginRight="22dp"
         android:layout_marginStart="22dp"
         android:layout_marginTop="15dp"
-        android:inputType="text"
         android:singleLine="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
