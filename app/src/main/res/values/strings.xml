@@ -4,4 +4,7 @@
     <string name="password">비밀번호</string>
     <string name="ok">OK</string>
     <string name="forget">잊어버렸어요.</string>
+    <string name="resultStartView">TextView</string>
+    <string name="search">SEARCH</string>
+    <string name="execute">EXECUTE</string>
 </resources>

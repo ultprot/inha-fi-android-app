@@ -61,14 +61,17 @@
         android:id="@+id/PostDataResult"
         android:layout_width="200dp"
         android:layout_height="63dp"
-        android:layout_marginBottom="70dp"
+        android:layout_marginBottom="68dp"
         android:layout_marginEnd="92dp"
         android:layout_marginLeft="92dp"
         android:layout_marginRight="92dp"
         android:layout_marginStart="92dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
 </android.support.constraint.ConstraintLayout>
