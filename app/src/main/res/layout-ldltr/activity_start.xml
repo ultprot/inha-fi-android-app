@@ -17,6 +17,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:fontFamily="monospace"
+        android:gravity="center_horizontal"
         android:lineSpacingExtra="?android:attr/listPreferredItemPaddingLeft"
         android:text="@string/resultStartView"
         android:textAppearance="@android:style/TextAppearance.Medium"

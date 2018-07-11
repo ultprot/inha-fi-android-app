@@ -29,14 +29,18 @@ public class InProcess extends AppCompatActivity {
     EditText Data2;
     String data1;
     String data2;
-    TextView Result;
+    EditText Result;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_process);
+        if (getIntent().hasExtra("org.examples.QUERY")){
+            Data2 = (EditText) findViewById(R.id.PostDataText2);
+            String text  = getIntent().getExtras().getString("org.examples.QUERY");
+            Data2.setText(text);
+        }
         Data1 = (EditText) findViewById(R.id.PostDataText1);
-        Data2=(EditText)findViewById(R.id.PostDataText2);
-        Result=(TextView)findViewById(R.id.PostDataResult);
+        Result = (EditText)findViewById(R.id.PostDataResult);
         Button PostData = (Button)findViewById(R.id.PostDataButton);
         //버튼이 클릭되면 여기 리스너로 옴
         PostData.setOnClickListener(new View.OnClickListener() {

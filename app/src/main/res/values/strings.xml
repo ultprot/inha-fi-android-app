@@ -5,6 +5,12 @@
     <string name="ok">OK</string>
     <string name="forget">잊어버렸어요.</string>
     <string name="resultStartView">TextView</string>
+    <string name="start">START</string>
+    <string name="enroll">Enroll</string>
+    <string name="enrollDevice">Enroll new device</string>
     <string name="search">SEARCH</string>
     <string name="execute">EXECUTE</string>
+    <string name="post">post</string>
+    <string name="command">command</string>
+    <string name="value">value</string>
 </resources>

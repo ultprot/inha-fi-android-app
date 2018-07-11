@@ -33,9 +33,9 @@ public class Start extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
 
-        button = (Button)findViewById(R.id.getVoiceBtn);
-        result = (TextView)findViewById((R.id.result));
-        doing = (TextView)findViewById(R.id.voiceText);
+        button = findViewById(R.id.getVoiceBtn);
+        result = findViewById((R.id.result));
+        doing = findViewById(R.id.voiceText);
 
         //get intent form main page and print
         if (getIntent().hasExtra("org.examples.SOMETHING")){
@@ -63,7 +63,7 @@ public class Start extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent ProcessIntent = new Intent(getApplicationContext(),InProcess.class);
-                ProcessIntent.putExtra("","enrolling");
+                ProcessIntent.putExtra("org.examples.QUERY",result.getText());
                 startActivity(ProcessIntent);
             }
         });
