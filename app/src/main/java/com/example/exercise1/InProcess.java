@@ -3,7 +3,9 @@ package com.example.exercise1;
 import android.support.v7.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -29,23 +31,27 @@ public class InProcess extends AppCompatActivity {
     EditText Data2;
     String data1;
     String data2;
-    EditText Result;
+    TextView Result;
+    InputMethodManager imm;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_process);
         if (getIntent().hasExtra("org.examples.QUERY")){
-            Data2 = (EditText) findViewById(R.id.PostDataText2);
+            Data2 =  findViewById(R.id.PostDataText2);
             String text  = getIntent().getExtras().getString("org.examples.QUERY");
             Data2.setText(text);
         }
-        Data1 = (EditText) findViewById(R.id.PostDataText1);
-        Result = (EditText)findViewById(R.id.PostDataResult);
-        Button PostData = (Button)findViewById(R.id.PostDataButton);
+        Data1 =  findViewById(R.id.PostDataText1);
+        Result = findViewById(R.id.PostDataResult);
+        Result.setMovementMethod(new ScrollingMovementMethod());
+        imm=(InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+        Button PostData = findViewById(R.id.PostDataButton);
         //버튼이 클릭되면 여기 리스너로 옴
         PostData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                imm.hideSoftInputFromWindow(Data1.getWindowToken(),0);
                 new PostTask().execute("http://14.63.161.4:26530/post");//AsyncTask 시작시킴
             }
         });
