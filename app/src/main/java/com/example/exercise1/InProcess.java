@@ -13,6 +13,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -31,6 +33,9 @@ public class InProcess extends AppCompatActivity {
     EditText Data2;
     String data1;
     String data2;
+    String lastIntent=null;
+    String lastSessionID=null;
+    JSONObject lastjson=null;
     TextView Result;
     InputMethodManager imm;
     @Override
@@ -52,7 +57,7 @@ public class InProcess extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 imm.hideSoftInputFromWindow(Data1.getWindowToken(),0);
-                new PostTask().execute("http://14.63.161.4:26530/post");//AsyncTask 시작시킴
+                new PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
             }
         });
     }
@@ -62,27 +67,46 @@ public class InProcess extends AppCompatActivity {
             try {
                 //JSONObject를 만들고 key value 형식으로 값을 저장해준다.
                 JSONObject jsonObject = new JSONObject();
-                data1=Data1.getText().toString();
                 data2=Data2.getText().toString();
-                jsonObject.accumulate("command", data1);
-                jsonObject.accumulate("value", data2);
+                String lat="37.5395634";
+                String lon="127.0017441";
+                jsonObject.accumulate("query", data2);
+                jsonObject.accumulate("lat", lat);
+                jsonObject.accumulate("lon", lon);
+                if(lastIntent=="destination")
+                {
+                    jsonObject.accumulate("sessionID",lastSessionID);
+                    jsonObject.accumulate("dest",lastjson.optString("dest"));
+                }
+                else if(lastIntent=="destination_poi_results")
+                {
+
+                }
+                else if(lastIntent=="destination_poi_select")
+                {
+
+                }
+                else if(lastIntent=="destination_path_results")
+                {
+
+                }
+                else if(lastIntent=="destination_path_select")
+                {
+
+                }
                 HttpURLConnection con = null;
                 BufferedReader reader = null;
                 try{
-                    //URL url = new URL(“http://192.168.25.16:3000/users“);
                     URL url = new URL(urls[0]);
-                    //연결을 함
                     con = (HttpURLConnection) url.openConnection();
-                    con.setRequestMethod("POST");//POST방식으로 보냄
+                    con.setRequestMethod("POST");//POST method
                     con.setRequestProperty("Cache-Control", "no-cache");//캐시 설정
                     con.setRequestProperty("Content-Type", "application/json");//application JSON 형식으로 전송
-                    con.setRequestProperty("Accept", "text/html");//서버에 response 데이터를 html로 받음
+                    con.setRequestProperty("Accept", "application/json");//서버 response json
                     con.setDoOutput(true);//Outstream으로 post 데이터를 넘겨주겠다는 의미
                     con.setDoInput(true);//Inputstream으로 서버로부터 응답을 받겠다는 의미
-                    con.connect();
-                    //서버로 보내기위해서 스트림 만듬
-                    OutputStream outStream = con.getOutputStream();
-                    //버퍼를 생성하고 넣음
+                    con.connect();//서버로 보내기위해서 스트림 만듬
+                    OutputStream outStream = con.getOutputStream();//버퍼를 생성하고 넣음
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream));
                     writer.write(jsonObject.toString());
                     writer.flush();
@@ -91,7 +115,7 @@ public class InProcess extends AppCompatActivity {
                     InputStream stream = con.getInputStream();
                     reader = new BufferedReader(new InputStreamReader(stream));
                     StringBuffer buffer = new StringBuffer();
-                    String line = "";
+                    String line;
                     while((line = reader.readLine()) != null){
                         buffer.append(line);
                     }
@@ -120,7 +144,24 @@ public class InProcess extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            Result.setText(result);//서버로 부터 받은 값을 출력해주는 부분
+            JSONObject rstJson;
+            String rst="";
+            try{
+                rstJson=new JSONObject(result);
+                rst+="intent: ";
+                rst+=rstJson.optString("intent");
+                rst+="\nsessionID: ";
+                rst+=rstJson.optString("sessionID");
+                rst+="\ndest: ";
+                rst+=rstJson.optString("dest");
+                lastSessionID=rstJson.optString("sessionID");
+                rst+="\n";
+                rst+=lastSessionID;
+            }
+            catch(JSONException e) {
+                rst = "error";
+            }
+            Result.setText(rst);//서버로 부터 받은 값을 출력해주는 부분
         }
 
     }
