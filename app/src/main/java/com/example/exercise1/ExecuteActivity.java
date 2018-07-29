@@ -47,6 +47,7 @@ public class ExecuteActivity extends AppCompatActivity {
     static JSONObject buspath=null;
     static JSONObject subwaypath=null;
     static JSONObject intepath=null;
+    static JSONObject pedespath=null;
     private TextToSpeech myTTS;
     private SpeechRecognizer mySpeechRecognizer;
 
@@ -240,8 +241,7 @@ public class ExecuteActivity extends AppCompatActivity {
                     Log.d("내 로그","poi_select로 파악");
                     if(lastjson.has("number"))
                     {
-                        JSONObject num=lastjson.optJSONObject("data");
-                        int poiNumber=num.optInt("number");
+                        int poiNumber=lastjson.optInt("number");
                         exacpoi=lastpois.optJSONObject(poiNumber);
                     }
                     else if(lastjson.has("dest"))
@@ -259,7 +259,15 @@ public class ExecuteActivity extends AppCompatActivity {
                             }
                         }
                     }
-                    new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
+                    float radius=Float.parseFloat(exacpoi.optString("radius"));
+                    if(radius<=0.5)
+                    {
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/pedes");//AsyncTask 시작시킴
+                    }
+                    else
+                    {
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
+                    }
                 }
                 else if(lastIntent.equals("destination_path_results"))
                 {
@@ -321,6 +329,16 @@ public class ExecuteActivity extends AppCompatActivity {
                             Path.setText(intepath.toString());
                             break;
                     }
+                    lastIntent = null;
+                    lastSessionID = null;
+                    lastpois=null;
+                    exacpoi=null;
+                    lastjson=null;
+                }
+                else if(lastIntent.equals("pedes_search"))
+                {
+                    pedespath=lastjson;
+                    Path.setText(pedespath.toString());
                     lastIntent = null;
                     lastSessionID = null;
                     lastpois=null;
