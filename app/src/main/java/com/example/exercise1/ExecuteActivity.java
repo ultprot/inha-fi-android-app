@@ -1,9 +1,21 @@
 package com.example.exercise1;
 
+import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -30,8 +42,10 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class ExecuteActivity extends AppCompatActivity {
 
@@ -51,12 +65,16 @@ public class ExecuteActivity extends AppCompatActivity {
     private TextToSpeech myTTS;
     private SpeechRecognizer mySpeechRecognizer;
 
+
+    protected AudioManager mAudioManager;
+
     TextView Path;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_execute);
+
 
         Button startBtn = (Button) findViewById(R.id.startButton);
         Path=findViewById(R.id.textView);
@@ -66,6 +84,7 @@ public class ExecuteActivity extends AppCompatActivity {
 
         initializeTextToSpeech();
         initializeSpeechRecognizer();
+        mAudioManager=(AudioManager)getSystemService(AUDIO_SERVICE);
 
         startBtn.setOnClickListener(new OnClickListener() {
             @Override
@@ -73,7 +92,12 @@ public class ExecuteActivity extends AppCompatActivity {
                 i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);            //intent 생성
                 i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                 i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+                mAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                mAudioManager.startBluetoothSco();
+                mAudioManager.setBluetoothScoOn(true);
+
                 mySpeechRecognizer.startListening(i);
+
             }
         });
 
@@ -374,10 +398,12 @@ public class ExecuteActivity extends AppCompatActivity {
             mySpeechRecognizer.setRecognitionListener(new RecognitionListener() {
                 @Override
                 public void onReadyForSpeech(Bundle params) {
+
                 }
 
                 @Override
                 public void onBeginningOfSpeech() {
+
                 }
 
                 @Override
@@ -390,10 +416,16 @@ public class ExecuteActivity extends AppCompatActivity {
 
                 @Override
                 public void onEndOfSpeech() {
+                    mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                    mAudioManager.stopBluetoothSco();
+                    mAudioManager.setBluetoothScoOn(false);
                 }
 
                 @Override
                 public void onError(int error) {
+                    mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                    mAudioManager.stopBluetoothSco();
+                    mAudioManager.setBluetoothScoOn(false);
                 }
 
                 @Override
