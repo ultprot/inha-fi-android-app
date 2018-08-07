@@ -55,6 +55,9 @@ public class ExecuteActivity extends AppCompatActivity {
 
     static String lastIntent = null;
     static String lastSessionID = null;
+    static String station;
+    static String busNum;
+    static String count;
     static JSONObject lastjson = null;
     static JSONArray lastpois=null;
     static JSONObject exacpoi=null;
@@ -210,7 +213,16 @@ public class ExecuteActivity extends AppCompatActivity {
                 {
                     lastSessionID=rstJson.optString("sessionID");
                 }
-                ffText = rstJson.optString("fulfillmentText");
+                if(rstJson.has("ffText"))
+                {
+                    ffText = rstJson.optString("fulfillmentText");
+                }
+                if(lastIntent.equals("bus_search"))
+                {
+                    station=rstJson.optString("station");
+                    busNum=rstJson.optString("num");
+                    count=rstJson.optString("count");
+                }
             } catch (JSONException e) {
                 ffText = "error";
             }
@@ -286,11 +298,11 @@ public class ExecuteActivity extends AppCompatActivity {
                     float radius=Float.parseFloat(exacpoi.optString("radius"));
                     if(radius<=0.5)
                     {
-                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/pedes");//AsyncTask 시작시킴
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/pedes");//AsyncTask 시작시킴
                     }
                     else
                     {
-                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/query");//AsyncTask 시작시킴
                     }
                 }
                 else if(lastIntent.equals("destination_path_results"))
@@ -369,9 +381,14 @@ public class ExecuteActivity extends AppCompatActivity {
                     exacpoi=null;
                     lastjson=null;
                 }
-
+                else if(lastIntent.equals("bus_search"))
+                {
+                    String temp=station+"에 도착할 예정인 "+busNum+"번 버스에"+count+"명이 타고 있습니다.";
+                    ffText=temp;
+                }
             }
             speak(ffText);
+            Log.d("내 로그",ffText);
             //Log.d("내 로그","lastIntent"+lastIntent+'\n'+"lastSessionID"+lastSessionID);
         }
     }
@@ -451,7 +468,7 @@ public class ExecuteActivity extends AppCompatActivity {
     private void processResult(String s) {
         speechRecognitionResult = s;
         Log.d("내 로그","음성 인식은 됨."+speechRecognitionResult);
-        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
+        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/query");//AsyncTask 시작시킴
 
     }//!processResult
 
