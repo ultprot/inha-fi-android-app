@@ -39,15 +39,15 @@ public class ExecuteActivity extends AppCompatActivity {
     String speechRecognitionResult;
     Intent i;
 
-    static String lastIntent;
-    static String lastSessionID;
-    static JSONObject lastjson;
-    static JSONArray lastpois;
-    static JSONObject exacpoi;
-    static JSONObject buspath;
-    static JSONObject subwaypath;
-    static JSONObject intepath;
-    static JSONObject pedespath;
+    static String lastIntent = null;
+    static String lastSessionID = null;
+    static JSONObject lastjson = null;
+    static JSONArray lastpois=null;
+    static JSONObject exacpoi=null;
+    static JSONObject buspath=null;
+    static JSONObject subwaypath=null;
+    static JSONObject intepath=null;
+    static JSONObject pedespath=null;
     private TextToSpeech myTTS;
     private SpeechRecognizer mySpeechRecognizer;
 
@@ -57,16 +57,6 @@ public class ExecuteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_execute);
-
-        lastIntent = null;
-        lastSessionID = null;
-        lastjson = null;
-        lastpois=null;
-        exacpoi=null;
-        buspath=null;
-        subwaypath=null;
-        intepath=null;
-        pedespath=null;
 
         Button startBtn = (Button) findViewById(R.id.startButton);
         Path=findViewById(R.id.textView);
