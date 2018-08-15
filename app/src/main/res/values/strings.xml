@@ -13,4 +13,6 @@
     <string name="post">post</string>
     <string name="command">command</string>
     <string name="value">value</string>
+
+    <string name="kakao_app_key">7e23c35f2eab3d565574908a0444590a</string>
 </resources>

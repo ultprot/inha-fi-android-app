@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <application
+        android:name=".GlobalApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -20,8 +21,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="@string/kakao_app_key" />
+
         <activity android:name=".Eroll" />
-        <activity android:name=".InProcess"/>
         <activity android:name=".ExecuteActivity"/>
     </application>
 
