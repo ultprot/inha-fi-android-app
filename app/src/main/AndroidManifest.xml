@@ -23,7 +23,7 @@
         </activity>
 
         <meta-data
-            android:name="com.kakao.sdk.AppKey"
+            android:name="com.kakao.sdk.ClientSecret"
             android:value="@string/kakao_app_key" />
 
         <activity android:name=".Eroll" />
