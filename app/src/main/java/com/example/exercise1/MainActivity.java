@@ -4,8 +4,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+
+import com.kakao.auth.ApiResponseCallback;
+import com.kakao.auth.AuthService;
 import com.kakao.auth.ISessionCallback;
 import com.kakao.auth.Session;
+import com.kakao.auth.network.response.AccessTokenInfoResponse;
 import com.kakao.network.ErrorResult;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
@@ -25,9 +29,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        callback = new SessionCallback();
-        Session.getCurrentSession().addCallback(callback);
-        Session.getCurrentSession().checkAndImplicitOpen();
+        if (Session.getCurrentSession().checkAndImplicitOpen()) {
+            // 액세스토큰 유효하거나 리프레시 토큰으로 액세스 토큰 갱신을 시도할 수 있는 경우
+            Log.e("login","login remained");
+            requestMe();
+            redirectSignupActivity();
+        } else {
+            // 무조건 재로그인을 시켜야 하는 경우
+            Log.e("login","have to login");
+
+            callback = new SessionCallback();
+            Session.getCurrentSession().addCallback(callback);
+            Session.getCurrentSession().checkAndImplicitOpen();
+        }
+
 
     }
 
@@ -126,5 +141,34 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //for get kakao user's token for auto login
+    private void requestAccessTokenInfo() {
+        AuthService.getInstance().requestAccessTokenInfo(new ApiResponseCallback<AccessTokenInfoResponse>() {
+            @Override
+            public void onSessionClosed(ErrorResult errorResult) {
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);      //MainActivity로 돌아감.
+            }
+
+            @Override
+            public void onNotSignedUp() {
+                // not happened
+            }
+
+            @Override
+            public void onFailure(ErrorResult errorResult) {
+                Logger.e("failed to get access token info. msg=" + errorResult);
+            }
+
+            @Override
+            public void onSuccess(AccessTokenInfoResponse accessTokenInfoResponse) {
+                long userId = accessTokenInfoResponse.getUserId();
+                Logger.d("this access token is for userId=" + userId);
+
+                long expiresInMilis = accessTokenInfoResponse.getExpiresInMillis();
+                Logger.d("this access token expires after " + expiresInMilis + " milliseconds.");
+            }
+        });
+    }
 
 }
