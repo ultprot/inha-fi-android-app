@@ -1,6 +1,8 @@
 package com.example.exercise1;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -33,7 +35,23 @@ public class MainActivity extends AppCompatActivity {
             // 액세스토큰 유효하거나 리프레시 토큰으로 액세스 토큰 갱신을 시도할 수 있는 경우
             Log.e("login","login remained");
             requestMe();
-            redirectSignupActivity();
+
+            try {
+                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+
+                SharedPreferences.Editor ed = pref.edit();
+
+
+                String getUserID = pref.getString("userId", "");
+                String getGard = pref.getString("gard","");
+                if (getUserID == "" || getGard == "") {
+                    redirectEnrollActivity();
+                }else{
+                    redirectExecuteActivity();
+                }
+            }catch (Exception err){
+                redirectEnrollActivity();
+            }
         } else {
             // 무조건 재로그인을 시켜야 하는 경우
             Log.e("login","have to login");
@@ -61,13 +79,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //for redirect page after login success
-    protected void redirectSignupActivity() {
+    protected void redirectExecuteActivity() {
         Log.e("redirect","in redirect Singup Activity");
 
         Intent executeIntent = new Intent(getApplicationContext(),ExecuteActivity.class);
         startActivity(executeIntent);
     }
+    protected void redirectEnrollActivity() {
+        Log.e("redirect","in redirect Singup Activity");
 
+        Intent enrollIntent = new Intent(getApplicationContext(),EnrollActivity.class);
+        startActivity(enrollIntent);
+    }
     //kakao Login Callback
     private class SessionCallback implements ISessionCallback {
 
@@ -75,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onSessionOpened() {
             Log.e("session opned","open success");
-            redirectSignupActivity();
+            redirectEnrollActivity();
         }
 
         // 로그인에 실패한 상태

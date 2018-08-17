@@ -1,6 +1,7 @@
 package com.example.exercise1;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,6 +17,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,9 +36,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -38,6 +49,9 @@ public class ExecuteActivity extends AppCompatActivity {
     Button button;
     String speechRecognitionResult;
     Intent i;
+    //백버튼 처리를 위한 변수
+    long first_time;
+    long second_time;
 
     static String lastIntent = null;
     static String lastSessionID = null;
@@ -57,6 +71,13 @@ public class ExecuteActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_execute);
+
+        SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+        String userId = pref.getString("userId","");
+        String gard = pref.getString("gard","");
+
+        Log.d("기록","이용자 아이디 : "+userId);
+        Log.d("기록","이용자 보호자 연락처 : "+gard);
 
         Button startBtn = (Button) findViewById(R.id.startButton);
         Path=findViewById(R.id.textView);
@@ -81,12 +102,24 @@ public class ExecuteActivity extends AppCompatActivity {
         enrollBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent startIntent = new Intent(getApplicationContext(), Eroll.class);
+                Intent startIntent = new Intent(getApplicationContext(), EnrollActivity.class);
                 startIntent.putExtra("org.examples.ENROLL", "enrolling");
                 startActivity(startIntent);
             }
         });
         //end speech recognition
+    }
+
+    //벡버튼 두번눌리면 종료
+    @Override
+    public void onBackPressed() {
+        second_time = System.currentTimeMillis();
+        Toast.makeText(ExecuteActivity.this, ""+second_time, Toast.LENGTH_SHORT).show();
+        if(second_time - first_time < 2000){
+            super.onBackPressed();
+            finishAffinity();
+        }
+        first_time = System.currentTimeMillis();
     }
 
     public class PostTask extends AsyncTask<String, String, String> {
@@ -437,4 +470,7 @@ public class ExecuteActivity extends AppCompatActivity {
         super.onPause();
         myTTS.shutdown();
     }//!onPause
+
+
+
 }

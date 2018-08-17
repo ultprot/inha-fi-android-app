@@ -4,9 +4,9 @@
     android:versionCode="1"
     android:versionName="1.0">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:name=".GlobalApplication"
@@ -28,8 +28,8 @@
             android:name="com.kakao.sdk.AppKey"
             android:value="@string/kakao_app_key" />
 
-        <activity android:name=".Eroll" />
-        <activity android:name=".ExecuteActivity"/>
+        <activity android:name=".ExecuteActivity" />
+        <activity android:name=".EnrollActivity"></activity>
     </application>
 
 </manifest>
