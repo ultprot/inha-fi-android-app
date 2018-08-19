@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.kakao.auth.ApiResponseCallback;
 import com.kakao.auth.AuthService;
@@ -26,6 +27,10 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private SessionCallback callback;
 
+    //백버튼 처리를 위한 변수
+    long first_time;
+    long second_time;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,17 +39,17 @@ public class MainActivity extends AppCompatActivity {
         if (Session.getCurrentSession().checkAndImplicitOpen()) {
             // 액세스토큰 유효하거나 리프레시 토큰으로 액세스 토큰 갱신을 시도할 수 있는 경우
             Log.e("login","login remained");
-            requestMe();
 
             try {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                String getUserID = pref.getString("userId", "X");
+                String getGard = pref.getString("gard","X");
 
-                SharedPreferences.Editor ed = pref.edit();
-
-
-                String getUserID = pref.getString("userId", "");
-                String getGard = pref.getString("gard","");
-                if (getUserID == "" || getGard == "") {
+                if (getUserID == "X" || getGard == "X") {
+                    if(getUserID=="X")
+                        Log.e("저장필요","이용자아이디 없음.");
+                    else
+                        Log.e("저장필요","보호자번호 없음.");
                     redirectEnrollActivity();
                 }else{
                     redirectExecuteActivity();
@@ -65,6 +70,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        second_time = System.currentTimeMillis();
+        Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+        if(second_time - first_time < 2000){
+            super.onBackPressed();
+            finishAffinity();
+        }
+        first_time = System.currentTimeMillis();
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, data)) {
             return;
@@ -80,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
     //for redirect page after login success
     protected void redirectExecuteActivity() {
-        Log.e("redirect","in redirect Singup Activity");
+        Log.e("redirect","in redirect Excute Activity");
 
         Intent executeIntent = new Intent(getApplicationContext(),ExecuteActivity.class);
         startActivity(executeIntent);
