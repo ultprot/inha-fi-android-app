@@ -10,6 +10,20 @@
     tools:layout_editor_absoluteY="8dp">
 
     <Button
+        android:id="@+id/btn_discon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="로그아웃(구글)"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/startButton"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
         android:id="@+id/startButton"
         style="@style/Widget.AppCompat.Button"
         android:layout_width="wrap_content"
@@ -42,7 +56,6 @@
 
     <EditText
         android:id="@+id/enrollTextView"
-        android:hint="@string/enroll"
         style="?attr/textAppearanceListItemSmall"
         android:layout_width="wrap_content"
         android:layout_height="53dp"
@@ -53,6 +66,7 @@
         android:layout_marginStart="85dp"
         android:layout_marginTop="48dp"
         android:ems="10"
+        android:hint="@string/enroll"
         android:inputType="textPersonName"
         android:text="@string/enrollDevice"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -73,5 +87,19 @@
         app:layout_constraintTop_toBottomOf="@+id/startButton"
         app:layout_constraintWidth_default="percent"
         app:layout_constraintWidth_percent="0.9" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="20dp" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="20dp" />
 </android.support.constraint.ConstraintLayout>
 

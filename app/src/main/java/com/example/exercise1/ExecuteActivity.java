@@ -1,6 +1,9 @@
 package com.example.exercise1;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,13 +11,26 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,9 +47,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.Locale;
+import java.util.Locale;;
 
-public class ExecuteActivity extends AppCompatActivity {
+
+public class ExecuteActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
 
     Button button;
     String speechRecognitionResult;
@@ -50,6 +67,10 @@ public class ExecuteActivity extends AppCompatActivity {
     static JSONObject pedespath=null;
     private TextToSpeech myTTS;
     private SpeechRecognizer mySpeechRecognizer;
+
+    private FirebaseAuth mAuth;
+    private GoogleApiClient mGoogleApiClient;
+    private Button btn_logout_google;
 
     TextView Path;
 
@@ -87,7 +108,100 @@ public class ExecuteActivity extends AppCompatActivity {
             }
         });
         //end speech recognition
+
+        // GoogleSignInOptions 생성
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder
+                (GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, this )
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+
+        // 로그인 작업의 onCreate 메소드에서 FirebaseAuth 개체의 공유 인스턴스를 가져옵니다.
+        mAuth = FirebaseAuth.getInstance();
+
+        btn_logout_google = (Button)findViewById(R.id.btn_discon);
+        btn_logout_google.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(final View view) {
+                Log.v("알림", "구글 LOGOUT");
+                AlertDialog.Builder alt_bld = new AlertDialog.Builder(view.getContext());
+                alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
+                        .setPositiveButton("네",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        // 네 클릭
+                                        // 로그아웃 함수 call
+                                        signOut();
+                                    }
+                                }).setNegativeButton("아니오",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                // 아니오 클릭. dialog 닫기.
+                                dialog.cancel();
+                            }
+                        });
+
+                AlertDialog alert = alt_bld.create();
+                // 대화창 클릭시 뒷 배경 어두워지는 것 막기
+                alert.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                // 대화창 제목 설정
+                alert.setTitle("로그아웃");
+                // 대화창 아이콘 설정
+                //alert.setIcon(R.drawable.check_dialog_64);
+                // 대화창 배경 색 설정
+                alert.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255,62,79,92)));
+                alert.show();
+            }
+        });
+
     }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.v("알림", "onConnectionFailed");
+    }
+
+    // 로그아웃
+    public void signOut() {
+        mGoogleApiClient.connect();
+
+        mGoogleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+            @Override
+            public void onConnected(@Nullable Bundle bundle) {
+                mAuth.signOut();
+
+                if (mGoogleApiClient.isConnected()) {
+                    Auth.GoogleSignInApi.signOut(mGoogleApiClient).setResultCallback(new ResultCallback<Status>() {
+                        @Override
+                        public void onResult(@NonNull Status status) {
+                            if (status.isSuccess()) {
+                                Log.v("알림", "로그아웃 성공");
+                                setResult(1);
+                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                startActivity(intent);
+                            } else {
+                                setResult(0);
+                            }
+                            finish();
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onConnectionSuspended(int i) {
+                Log.v("알림", "Google API Client Connection Suspended");
+                setResult(-1);
+                finish();
+            }
+        });
+    }
+
 
     public class PostTask extends AsyncTask<String, String, String> {
         @Override
