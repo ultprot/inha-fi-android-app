@@ -55,7 +55,6 @@ public class ExecuteActivity extends AppCompatActivity {
     Button button;
     Button logoutBtn;
     String speechRecognitionResult;
-    Intent i;
     //백버튼 처리를 위한 변수
     long first_time;
     long second_time;
@@ -112,6 +111,7 @@ public class ExecuteActivity extends AppCompatActivity {
         startBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                Intent i;
                 i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);            //intent 생성
                 i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                 i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
@@ -402,6 +402,7 @@ public class ExecuteActivity extends AppCompatActivity {
 
             }
             speak(ffText);
+            Log.d("내 로그","말 할 것"+ffText);
             //Log.d("내 로그","lastIntent"+lastIntent+'\n'+"lastSessionID"+lastSessionID);
         }
     }
@@ -575,15 +576,19 @@ public class ExecuteActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
 
-            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-            SharedPreferences.Editor ed = pref.edit();
-            ed.clear();
-            ed.commit();
-            Log.d("저장","앱 파일 모두 데이터삭제");
+            if(result == "fail"){
+                Log.d("저장","삭제중 서버오류");
+            }else {
+                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                SharedPreferences.Editor ed = pref.edit();
+                ed.clear();
+                ed.commit();
 
-            Log.d("저장","삭제결과 : "+result);
+                Log.d("저장", "앱 파일 모두 데이터삭제");
+
+                Log.d("저장", "삭제결과 : " + result);
+            }
         }
     }
-
 
 }
