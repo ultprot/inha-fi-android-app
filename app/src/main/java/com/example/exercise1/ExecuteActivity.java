@@ -15,6 +15,8 @@ import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -67,11 +69,24 @@ public class ExecuteActivity extends AppCompatActivity {
     static JSONObject pedespath=null;
     private TextToSpeech myTTS;
     private SpeechRecognizer mySpeechRecognizer;
+    private Double latitude;
+    private Double longitude;
 
 
     protected AudioManager mAudioManager;
 
     TextView Path;
+    GPSTracker gps=null;
+    public ExecuteActivity.MyHandler myHandler=new ExecuteActivity.MyHandler();
+
+    class MyHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg){
+            if(msg.what==GPSTracker.RENEW_GPS){
+                makeNewGpsService();
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,13 +96,30 @@ public class ExecuteActivity extends AppCompatActivity {
 
         Button startBtn = (Button) findViewById(R.id.startButton);
         Path=findViewById(R.id.textView);
+        if(getIntent().hasExtra("latitude")&&getIntent().hasExtra("longitude"))
+        {
+            String temp=getIntent().getDoubleExtra("latitude",0.0)+"\n"
+                    +getIntent().getDoubleExtra("longitude",0.0)+"\n"
+                    +getIntent().getIntExtra("code",0);
+            Path.setText(temp);
+        }
         if (getIntent().hasExtra("org.examples.SOMETHING")) {
             String text = getIntent().getExtras().getString("org.examples.SOMETHING");
         }//end
-
         initializeTextToSpeech();
         initializeSpeechRecognizer();
         mAudioManager=(AudioManager)getSystemService(AUDIO_SERVICE);
+        if(gps==null){
+            gps=new GPSTracker(this,myHandler);
+        }else{
+            gps.Update();
+        }
+        if(gps.canGetLocation()){
+            latitude=gps.getLatitude();
+            longitude=gps.getLongitude();
+        }else{
+            gps.showSettingsAlert();
+        }
 
         startBtn.setOnClickListener(new OnClickListener() {
             @Override
@@ -123,8 +155,8 @@ public class ExecuteActivity extends AppCompatActivity {
                 //JSONObject를 만들고 key value 형식으로 값을 저장해준다.
                 JSONObject jsonObject = new JSONObject();
                 Log.d("내 로그","json 오브젝트 만듬");
-                String lat = "37.5395634";
-                String lon = "127.0017441";
+                String lat = Double.toString(latitude);
+                String lon = Double.toString(longitude);
                 jsonObject.accumulate("query", speechRecognitionResult);
                 jsonObject.accumulate("lat", lat);
                 jsonObject.accumulate("lon", lon);
@@ -143,9 +175,24 @@ public class ExecuteActivity extends AppCompatActivity {
                     } else if (lastIntent.equals("destination_path_results")) {
                         jsonObject.accumulate("sessionID",lastSessionID);
 
-                    } else if (lastIntent == "destination_path_select") {
+                    } else if (lastIntent.equals("destination_path_select")){
                         jsonObject.accumulate("sessionID",lastSessionID);
-                    } else {
+                    } else if(lastIntent.equals("bus_search"))
+                    {
+
+                    }
+                    else if(lastIntent.equals("search")){
+                        jsonObject.accumulate("sessionID",lastSessionID);
+                    }
+                    else if(lastIntent.equals("search_select")){
+                        jsonObject.accumulate("sessionID",lastSessionID);
+                        jsonObject.accumulate("endLat",exacpoi.optString("frontLat"));
+                        jsonObject.accumulate("endLon",exacpoi.optString("frontLon"));
+                    }
+                    else if(lastIntent.equals("search_destination")) {
+                        jsonObject.accumulate("sessionID", lastSessionID);
+                    }
+                    else {
                         Log.d("내 로그", "해당사항 없지롱");
                     }
                 }
@@ -213,7 +260,7 @@ public class ExecuteActivity extends AppCompatActivity {
                 {
                     lastSessionID=rstJson.optString("sessionID");
                 }
-                if(rstJson.has("ffText"))
+                if(rstJson.has("fulfillmentText"))
                 {
                     ffText = rstJson.optString("fulfillmentText");
                 }
@@ -278,7 +325,7 @@ public class ExecuteActivity extends AppCompatActivity {
                     if(lastjson.has("number"))
                     {
                         int poiNumber=lastjson.optInt("number");
-                        exacpoi=lastpois.optJSONObject(poiNumber);
+                        exacpoi=lastpois.optJSONObject(poiNumber-1);
                     }
                     else if(lastjson.has("dest"))
                     {
@@ -298,14 +345,14 @@ public class ExecuteActivity extends AppCompatActivity {
                     float radius=Float.parseFloat(exacpoi.optString("radius"));
                     if(radius<=0.5)
                     {
-                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/pedes");//AsyncTask 시작시킴
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/pedes");//AsyncTask 시작시킴
                     }
                     else
                     {
-                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/query");//AsyncTask 시작시킴
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
                     }
                 }
-                else if(lastIntent.equals("destination_path_results"))
+                else if(lastIntent.equals("destination_path_results")||lastIntent.equals("search_destination"))
                 {
                     JSONArray pubpath=lastjson.optJSONObject("result").optJSONArray("path");
                     int cur=1;
@@ -386,10 +433,115 @@ public class ExecuteActivity extends AppCompatActivity {
                     String temp=station+"에 도착할 예정인 "+busNum+"번 버스에"+count+"명이 타고 있습니다.";
                     ffText=temp;
                 }
+                else if(lastIntent.equals("search")) {
+                    Log.d("내 로그", "이전 인텐트 search");
+                    String namestr = "";
+                    JSONObject poijson = lastjson.optJSONObject("searchPoiInfo");
+                    poijson = poijson.optJSONObject("pois");
+                    lastpois = poijson.optJSONArray("poi");
+
+                    int len = lastpois.length();
+                    Log.d("내 로그", "갯수 찾아냄" + len);
+
+                    if (len > 5) {
+                        len = 5;
+                    }
+                    if (len == 0) {
+                        speak("결과가 없습니다.");
+                    } else {
+                        for (int i = 0; i < len; i++) {
+                            JSONObject tempjson;
+                            String tempstr;
+                            try {
+                                tempjson = lastpois.getJSONObject(i);
+                                tempstr = tempjson.optString("name");
+                            } catch (JSONException e) {
+                                tempstr = "error";
+                            }
+                            namestr += Integer.toString(i + 1);
+                            namestr += "번, ";
+                            namestr += tempstr;
+                            namestr += ", ";
+                        }
+                        Log.d("내 로그", namestr);
+                        ffText += namestr;
+                    }
+                }
+                else if(lastIntent.equals("search_select")){
+                    Log.d("내 로그","poi_select로 파악");
+                    if(lastjson.has("number"))
+                    {
+                        int poiNumber=lastjson.optInt("number");
+                        exacpoi=lastpois.optJSONObject(poiNumber-1);
+                        Log.d("내 로그","몇번째"+poiNumber);
+                    }
+                    else if(lastjson.has("dest"))
+                    {
+                        String poidest=lastjson.optString("dest");
+                        for(int i=0;i<lastpois.length();i++)
+                        {
+                            String th;
+                            String tha;
+                            th=lastpois.optJSONObject(i).optString("name").replaceAll("[^\\uAC00-\\uD7A3xfe0-9a-zA-Z\\\\s]","");
+                            tha=poidest.replaceAll("[^\\uAC00-\\uD7A3xfe0-9a-zA-Z\\\\s]","");
+                            if(th.equals(tha))
+                            {
+                                exacpoi=lastpois.optJSONObject(i);
+                            }
+                        }
+                    }
+                    ffText=exacpoi.optString("name")+"에 관한 정보입니다."
+                            +exacpoi.optString("desc")+"거리는 "
+                            +exacpoi.optString("radius")+"킬로미터 입니다.";
+                }
+                else if(lastIntent.equals("search_destination"))
+                {
+                    float radius=Float.parseFloat(exacpoi.optString("radius"));
+                    if(radius<=0.5)
+                    {
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/pedes");//AsyncTask 시작시킴
+                    }
+                    else
+                    {
+                        JSONArray pubpath=lastjson.optJSONObject("result").optJSONArray("path");
+                        int cur=1;
+                        for(int i=0;i<pubpath.length();i++)
+                        {
+                            try{
+                                if(pubpath.getJSONObject(i).optInt("pathType")==cur)
+                                {
+                                    if(cur==1)
+                                    {
+                                        subwaypath=pubpath.getJSONObject(i);
+                                        cur++;
+                                    }
+                                    else if(cur==2)
+                                    {
+                                        buspath=pubpath.getJSONObject(i);
+                                        cur++;
+                                    }
+                                    else if(cur==3)
+                                    {
+                                        intepath=pubpath.getJSONObject(i);
+                                        cur++;
+                                    }
+                                    else
+                                    {
+                                    }
+                                }
+                            }
+                            catch(JSONException e)
+                            {
+
+                            }
+                        }
+                        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/query");//AsyncTask 시작시킴
+                    }
+                    Log.d("내 로그ffText",ffText);
+                }
             }
             speak(ffText);
-            Log.d("내 로그",ffText);
-            //Log.d("내 로그","lastIntent"+lastIntent+'\n'+"lastSessionID"+lastSessionID);
+            Log.d("내 로그ffText",ffText);
         }
     }
 
@@ -468,7 +620,7 @@ public class ExecuteActivity extends AppCompatActivity {
     private void processResult(String s) {
         speechRecognitionResult = s;
         Log.d("내 로그","음성 인식은 됨."+speechRecognitionResult);
-        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26532/query");//AsyncTask 시작시킴
+        new ExecuteActivity.PostTask().execute("http://14.63.161.4:26531/query");//AsyncTask 시작시킴
 
     }//!processResult
 
@@ -486,4 +638,12 @@ public class ExecuteActivity extends AppCompatActivity {
         super.onPause();
         myTTS.shutdown();
     }//!onPause
+
+    public void makeNewGpsService(){
+        if(gps==null){
+            gps=new GPSTracker(this,myHandler);
+        }else{
+            gps.Update();
+        }
+    }
 }
