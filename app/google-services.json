@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "439986678669",
+    "firebase_url": "https://inha-fi.firebaseio.com",
+    "project_id": "inha-fi",
+    "storage_bucket": "inha-fi.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439986678669:android:fc3f6f46ca1fabc8",
+        "android_client_info": {
+          "package_name": "com.example.exercise1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "439986678669-k06egnrjkfrf4kdnmr9j0ir6k8k30mch.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.exercise1",
+            "certificate_hash": "c626703123e6570fe4b925a539ee4c5820187b6b"
+          }
+        },
+        {
+          "client_id": "439986678669-av8ecksa2g0u07b1jqvvmhv50qrn5n91.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1YsKVqht9AjSdf7WR_70dph6fDk20k9s"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "439986678669-av8ecksa2g0u07b1jqvvmhv50qrn5n91.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
