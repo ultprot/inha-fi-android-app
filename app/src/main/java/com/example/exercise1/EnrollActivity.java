@@ -3,19 +3,16 @@ package com.example.exercise1;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.kakao.usermgmt.UserManagement;
-import com.kakao.usermgmt.callback.LogoutResponseCallback;
-
 import org.json.JSONObject;
+import java.net.HttpURLConnection;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -24,108 +21,81 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ExecuteActivity extends AppCompatActivity {
+public class EnrollActivity extends AppCompatActivity {
 
-    Button button;
-    Button logoutBtn;
-
-    //백버튼 처리를 위한 변수
+    TextView gardText;
+    Button gardBtn;
     long first_time;
     long second_time;
-
-    private int areaCode;
-
-    TextView Path;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_execute);
-        startService(new Intent(ExecuteActivity.this,MainService.class)
-                .putExtra("code",areaCode));
+        setContentView(R.layout.activity_enroll);
+
         SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-        String userId = pref.getString("userId","");
-        String gard = pref.getString("gard","");
-
-        Log.d("기록","이용자 아이디 : "+userId);
-        Log.d("기록","이용자 보호자 연락처 : "+gard);
-
-        Path=findViewById(R.id.textView);
-        if(getIntent().hasExtra("code"))
-        {
-            areaCode=getIntent().getIntExtra("cityCode",-1);
+        String getUserID = pref.getString("userId", "X");
+        if(getUserID=="X") {
+            //서버에 user id 요청 및 등록
+            Log.d("저장", "유저아이디 요청POST");
+            new SendPostEnroll().execute("http://14.63.161.4:26533/newuser");
+        }else{
+            Log.d("저장","유저아이디 : "+getUserID);
         }
+        gardText = (TextView) findViewById(R.id.gardText);
+        gardBtn = (Button) findViewById(R.id.gardBtn);
 
-        Button logoutBtn = (Button) findViewById(R.id.logoutBtn);
-        logoutBtn.setOnClickListener(new OnClickListener() {
+        gardBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 서버에 유저정보 삭제 & 앱 file에 저장된 정보 삭제
-                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
+                try {
+                    SharedPreferences pref = getSharedPreferences("pref",MODE_PRIVATE);
+                    SharedPreferences.Editor ed = pref.edit();
+                    String gard = gardText.getText().toString();
+                    Log.d("저장","받은 보호자 전화번호 : "+gard);
+                    ed.putString( "gard" , gard);
+                    ed.commit();
 
-                //logout 수행
-                onClickLogout();
+                    String getGard = pref.getString("gard", "없음");
+                    Log.d("저장테스트","보호자 번호 : "+getGard);
+
+                } catch (Exception err){
+                    Log.d("저장","보호자 안됨, "+err);
+                }
+
+                Intent executeIntent = new Intent(getApplicationContext(),ExecuteActivity.class);
+                startActivity(executeIntent);
             }
         });
-
-        Button enrollBtn = (Button) findViewById(R.id.Enroll);
-        enrollBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent startIntent = new Intent(getApplicationContext(), EnrollActivity.class);
-                startIntent.putExtra("org.examples.ENROLL", "enrolling");
-                startActivity(startIntent);
-            }
-        });
-        //end speech recognition
     }
 
-    //벡버튼 두번눌리면 종료
+
     @Override
     public void onBackPressed() {
         second_time = System.currentTimeMillis();
         Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
-        if (second_time - first_time < 2000) {
+        if(second_time - first_time < 2000){
             super.onBackPressed();
             finishAffinity();
         }
         first_time = System.currentTimeMillis();
     }
 
-    private void onClickLogout() {
-        UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
-            @Override
-            public void onCompleteLogout() {//로그아웃 성공 시
-                Log.e("redirect","in redirect Main Activity");
-                Intent mainIntent = new Intent(getApplicationContext(),MainActivity.class);
-                startActivity(mainIntent);
-            }
-        });
-    }
 
-    public class SendPostDelete extends AsyncTask<String, String, String>{
-
+    //for 서버로 post전송
+    public class SendPostEnroll extends AsyncTask<String, String, String>{
         @Override
         protected String doInBackground(String[] urls) {
             try {
-                Log.e("저장","in delete");
                 //JSONObject를 만들고 key value 형식으로 값을 저장해준다.
                 JSONObject jsonObject = new JSONObject();
-
-                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                String userId = pref.getString("userId","");
-                Log.e("저장","기존아이디삭제 : "+userId);
-
-                jsonObject.accumulate("userId", userId);
-
+                jsonObject.accumulate("user_id", "androidTest");
                 HttpURLConnection con = null;
                 BufferedReader reader = null;
                 try{
-                    //"http://14.63.161.4:26533/deleteuser"
                     URL url = new URL(urls[0]);
                     //연결을 함
                     con = (HttpURLConnection) url.openConnection();
@@ -174,22 +144,29 @@ public class ExecuteActivity extends AppCompatActivity {
             return null;
         }
 
-
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
+            Log.d("저장","POST변수 넘어옴 : "+result);
 
-            if(result == "fail"){
-                Log.d("저장","삭제중 서버오류");
-            }else {
+            try {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
                 SharedPreferences.Editor ed = pref.edit();
-                ed.clear();
-                ed.commit();
 
-                Log.d("저장", "앱 파일 모두 데이터삭제");
+                if(result== "fail"){
+                    Log.e("저장","서버오류");
+                    Toast.makeText(EnrollActivity.this, "서버 오류", Toast.LENGTH_SHORT).show();
+                }else {
+                    ed.putString("userId", result); // value : 저장될 값,
+                    ed.commit();
+                }
 
-                Log.d("저장", "삭제결과 : " + result);
+                String getUser = pref.getString("userId", "없음");
+                Log.d("저장테스트","아이디 : "+getUser);
+
+            }catch (Exception err){
+                Log.d("저장","아이디 안됨, "+err);
             }
         }
     }
+
 }
