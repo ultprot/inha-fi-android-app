@@ -52,4 +52,10 @@ dependencies {
     // push sdk를 사용하기 위해 필요.
     api group: 'com.kakao.sdk', name: 'push', version: project.KAKAO_SDK_VERSION
 
+    //구글
+    //noinspection GradleCompatible
+    implementation 'com.google.firebase:firebase-core:12.0.1'
+    implementation 'com.google.android.gms:play-services:12.0.1'
+
 }
+apply plugin: 'com.google.gms.google-services'

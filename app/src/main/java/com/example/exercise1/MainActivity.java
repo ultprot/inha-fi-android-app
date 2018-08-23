@@ -1,36 +1,39 @@
 package com.example.exercise1;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.kakao.auth.ApiResponseCallback;
-import com.kakao.auth.AuthService;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.kakao.auth.ISessionCallback;
 import com.kakao.auth.Session;
-import com.kakao.auth.network.response.AccessTokenInfoResponse;
 import com.kakao.network.ErrorResult;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.kakao.usermgmt.callback.MeResponseCallback;
 import com.kakao.usermgmt.response.model.UserProfile;
 import com.kakao.util.exception.KakaoException;
-import com.kakao.util.helper.log.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import static android.content.ContentValues.TAG;
 
 import org.json.JSONObject;
 
@@ -50,6 +53,12 @@ public class MainActivity extends AppCompatActivity {
     private int areaCode;
     GPSTracker gps=null;
     private SessionCallback callback;
+
+    final int RC_SIGN_IN = 9001; // 로그인 확인여부 코드
+    private FirebaseAuth mAuth;
+    private SignInButton signInButton; //구글 로그인 버튼
+    //private GoogleApiClient mGoogleApiClient; //API 클라이언트
+    private GoogleSignInClient googleSignInClient;
 
     //백버튼 처리를 위한 변수
     long first_time;
@@ -74,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
         if (Session.getCurrentSession().checkAndImplicitOpen()) {
             // 액세스토큰 유효하거나 리프레시 토큰으로 액세스 토큰 갱신을 시도할 수 있는 경우
             Log.e("login","login remained");
-
             try {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
                 String getUserID = pref.getString("userId", "X");
@@ -113,6 +121,90 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.d("내 로그","여기까지는 올 걸?");
         makePostData(Double.toString(initialLatitude),Double.toString(initialLongitude));
+
+
+
+
+        //firebase 인증 객체 선언
+        mAuth = FirebaseAuth.getInstance(); // 인스턴스 생성
+
+        //Google 로그인을 앱에 통합
+        //GoogleSignInOptions 개체를 구성할 때 requestIdToken을 호출
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        signInButton = (SignInButton)findViewById(R.id.btn_login_google);
+        signInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+                Intent signInIntent = googleSignInClient.getSignInIntent();
+                startActivityForResult(signInIntent, RC_SIGN_IN);
+            }
+        });
+
+    }
+
+    public void onStart() { // 사용자가 현재 로그인되어 있는지 확인
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser!=null){ // 만약 로그인이 되어있으면 다음 액티비티 실행
+
+            Log.e("login","login remained 구글");
+            try {
+                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                String getUserID = pref.getString("userId", "X");
+                String getGard = pref.getString("gard","X");
+
+                if (getUserID == "X" || getGard == "X") {
+                    if(getUserID=="X")
+                        Log.e("저장필요","이용자아이디 없음.");
+                    else
+                        Log.e("저장필요","보호자번호 없음.");
+                    redirectEnrollActivity();
+                }else{
+                    redirectExecuteActivity();
+                }
+            }catch (Exception err){
+                redirectEnrollActivity();
+            }
+        }
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+
+                            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                            SharedPreferences.Editor editor = pref.edit();
+                            editor.putString("login", "google");
+                            editor.commit();
+
+                            redirectEnrollActivity();
+
+                            Log.d(TAG, "signInWithCredential:success");
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                            Toast.makeText(MainActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+
+                        // ...
+                    }
+                });
     }
 
     @Override
@@ -126,10 +218,21 @@ public class MainActivity extends AppCompatActivity {
         first_time = System.currentTimeMillis();
     }
 
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, data)) {
             return;
+        }
+        else if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            try {
+                // 구글 로그인 성공
+                GoogleSignInAccount account = task.getResult(ApiException.class);
+                firebaseAuthWithGoogle(account);
+            } catch (ApiException e) {
+
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -162,6 +265,12 @@ public class MainActivity extends AppCompatActivity {
         // 로그인에 성공한 상태
         @Override
         public void onSessionOpened() {
+
+            SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putString("login", "kakao");
+            editor.commit();
+
             Log.e("session opned","open success");
             redirectEnrollActivity();
         }
@@ -230,88 +339,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    }
-
-
-
-
-
-
-
-    //for get kakao user's token for auto login
-    private void requestAccessTokenInfo() {
-        AuthService.getInstance().requestAccessTokenInfo(new ApiResponseCallback<AccessTokenInfoResponse>() {
-            @Override
-            public void onSessionClosed(ErrorResult errorResult) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);      //MainActivity로 돌아감.
-            }
-
-            @Override
-            public void onNotSignedUp() {
-                // not happened
-            }
-
-            @Override
-            public void onFailure(ErrorResult errorResult) {
-                Logger.e("failed to get access token info. msg=" + errorResult);
-            }
-
-            @Override
-            public void onSuccess(AccessTokenInfoResponse accessTokenInfoResponse) {
-                long userId = accessTokenInfoResponse.getUserId();
-                Logger.d("this access token is for userId=" + userId);
-                long expiresInMilis = accessTokenInfoResponse.getExpiresInMillis();
-                Logger.d("this access token expires after " + expiresInMilis + " milliseconds.");
-            }
-
-
+    public void makeNewGpsService() {
+        if (gps == null) {
+            gps = new GPSTracker(this, myHandler);
+        } else {
+            gps.Update();
         }
-        public void makeNewGpsService(){
-            if(gps==null){
-                gps=new GPSTracker(this,myHandler);
-            }else{
-                gps.Update();
+
+        public void makePostData (String lat, String lon){
+            Log.d("내 로그", "post 들어옴");
+            JSONObject currentLocation = new JSONObject();
+            try {
+                currentLocation.accumulate("lat", initialLatitude);
+                currentLocation.accumulate("lon", initialLongitude);
+            } catch (Exception e) {
+
             }
 
-            public void makePostData(String lat,String lon){
-                Log.d("내 로그","post 들어옴");
-                JSONObject currentLocation=new JSONObject();
-                try{
-                    currentLocation.accumulate("lat",initialLatitude);
-                    currentLocation.accumulate("lon",initialLongitude);
-                }catch(Exception e)
-                {
 
-                }
+            OkHttpClient client = new OkHttpClient();
+            RequestBody jsonBody = RequestBody.create(MediaType.parse("application/json")
+                    , currentLocation.toString());
 
-
-                OkHttpClient client=new OkHttpClient();
-                RequestBody jsonBody=RequestBody.create(MediaType.parse("application/json")
-                        ,currentLocation.toString());
-
-                Request request=new Request.Builder()
-                        .url("http://14.63.161.4:26531/areaclass")
-                        .post(jsonBody)
-                        .build();
-                client.newCall(request).enqueue(makePostDataCallBack);
+            Request request = new Request.Builder()
+                    .url("http://14.63.161.4:26531/areaclass")
+                    .post(jsonBody)
+                    .build();
+            client.newCall(request).enqueue(makePostDataCallBack);
+        }
+        private Callback makePostDataCallBack = new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.d("내 로그", "오류 발생");
             }
-            private Callback makePostDataCallBack=new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Log.d("내 로그","오류 발생");
-                }
 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    final String responseData=response.body().string();
-                    try{
-                        JSONObject result=new JSONObject(responseData);
-                        areaCode=result.optInt("largeCd");
-                        Log.d("내 로그","areaCode"+areaCode);
-                        Log.d("내 로그","결과"+result.optInt("largeCd"));
-                    }catch(Exception e){
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String responseData = response.body().string();
+                try {
+                    JSONObject result = new JSONObject(responseData);
+                    areaCode = result.optInt("largeCd");
+                    Log.d("내 로그", "areaCode" + areaCode);
+                    Log.d("내 로그", "결과" + result.optInt("largeCd"));
+                } catch (Exception e) {
 
-                    }
                 }
-            };
+            }
+        };
+    }
