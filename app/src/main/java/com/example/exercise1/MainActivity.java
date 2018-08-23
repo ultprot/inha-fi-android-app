@@ -2,6 +2,7 @@ package com.example.exercise1;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.os.Handler;
@@ -9,6 +10,7 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -24,14 +26,18 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.kakao.auth.ApiResponseCallback;
+import com.kakao.auth.AuthService;
 import com.kakao.auth.ISessionCallback;
 import com.kakao.auth.Session;
+import com.kakao.auth.network.response.AccessTokenInfoResponse;
 import com.kakao.network.ErrorResult;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 import com.kakao.usermgmt.callback.MeResponseCallback;
 import com.kakao.usermgmt.response.model.UserProfile;
 import com.kakao.util.exception.KakaoException;
+import com.kakao.util.helper.log.Logger;
 
 import static android.content.ContentValues.TAG;
 
@@ -48,10 +54,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-    private double initialLatitude; //시작 시의 위도
-    private double initialLongitude;    //시작 시의 경도
-    private int areaCode;
-    GPSTracker gps=null;
+
+    //---사용자 도시 파악 위한 변수-----------------------
+    private double initialLatitude;   //시작 시의 위도
+    private double initialLongitude;  //시작 시의 경도
+    private int areaCode;             //사용자의 도시 코드
+    //----------------------------------------------------
+    GPSTracker gps=null;    //gps 사용을 위한 객체 선언
+
     private SessionCallback callback;
 
     final int RC_SIGN_IN = 9001; // 로그인 확인여부 코드
@@ -61,11 +71,13 @@ public class MainActivity extends AppCompatActivity {
     private GoogleSignInClient googleSignInClient;
 
     //백버튼 처리를 위한 변수
-    long first_time;
-    long second_time;
-    public MyHandler myHandler=new MyHandler();
+    long first_time;    //
+    long second_time;   //
+    //------------------//
 
-    class MyHandler extends Handler{
+    public MyHandler myHandler=new MyHandler(); //gps 처리를 위한 핸들러 객체
+
+    class MyHandler extends Handler{    //gps 사용을 위한 핸들러 클래스
         @Override
         public void handleMessage(Message msg){
             if(msg.what==GPSTracker.RENEW_GPS){
@@ -74,12 +86,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //-------------------gps 초기화-------------------
+        if(gps==null){                                  //
+            gps=new GPSTracker(this,myHandler); //
+        }else{                                          //
+            gps.Update();                               //
+        }                                               //
+        if(gps.canGetLocation()){                       //
+            initialLatitude=gps.getLatitude();          //위치 확인 가능하면 위도 저장
+            initialLongitude=gps.getLongitude();        //위치 확인 가능하면 경도 저장
+        }else{                                          //
+            Log.d("내 로그","좌표 불가");     //
+        }                                               //
+        //------------------------------------------------
+
+        makePostData(Double.toString(initialLatitude)
+                ,Double.toString(initialLongitude));   //도시 코드 조회
+
         if (Session.getCurrentSession().checkAndImplicitOpen()) {
             // 액세스토큰 유효하거나 리프레시 토큰으로 액세스 토큰 갱신을 시도할 수 있는 경우
             Log.e("login","login remained");
@@ -88,8 +116,8 @@ public class MainActivity extends AppCompatActivity {
                 String getUserID = pref.getString("userId", "X");
                 String getGard = pref.getString("gard","X");
 
-                if (getUserID == "X" || getGard == "X") {
-                    if(getUserID=="X")
+                if (getUserID.equals("X") || getGard.equals("X")) {
+                    if(getUserID.equals("X"))
                         Log.e("저장필요","이용자아이디 없음.");
                     else
                         Log.e("저장필요","보호자번호 없음.");
@@ -108,22 +136,6 @@ public class MainActivity extends AppCompatActivity {
             Session.getCurrentSession().addCallback(callback);
             Session.getCurrentSession().checkAndImplicitOpen();
         }
-        if(gps==null){
-            gps=new GPSTracker(this,myHandler);
-        }else{
-            gps.Update();
-        }
-        if(gps.canGetLocation()){
-            initialLatitude=gps.getLatitude();
-            initialLongitude=gps.getLongitude();
-        }else{
-            gps.showSettingsAlert();
-        }
-        Log.d("내 로그","여기까지는 올 걸?");
-        makePostData(Double.toString(initialLatitude),Double.toString(initialLongitude));
-
-
-
 
         //firebase 인증 객체 선언
         mAuth = FirebaseAuth.getInstance(); // 인스턴스 생성
@@ -161,8 +173,8 @@ public class MainActivity extends AppCompatActivity {
                 String getUserID = pref.getString("userId", "X");
                 String getGard = pref.getString("gard","X");
 
-                if (getUserID == "X" || getGard == "X") {
-                    if(getUserID=="X")
+                if (getUserID.equals("X") || getGard.equals("X")) {
+                    if(getUserID.equals("X"))
                         Log.e("저장필요","이용자아이디 없음.");
                     else
                         Log.e("저장필요","보호자번호 없음.");
@@ -218,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
         first_time = System.currentTimeMillis();
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, data)) {
@@ -248,17 +259,17 @@ public class MainActivity extends AppCompatActivity {
         Log.e("redirect","in redirect Excute Activity");
 
         Intent executeIntent = new Intent(getApplicationContext(),ExecuteActivity.class);
-        executeIntent.putExtra("latitude",initialLatitude);
-        executeIntent.putExtra("longitude",initialLongitude);
-        executeIntent.putExtra("code",areaCode);
+        executeIntent.putExtra("code",areaCode);    //이후 실행될 서비스에 도시 코드 보냄
         startActivity(executeIntent);
     }
+
     protected void redirectEnrollActivity() {
         Log.e("redirect","in redirect Singup Activity");
 
         Intent enrollIntent = new Intent(getApplicationContext(),EnrollActivity.class);
         startActivity(enrollIntent);
     }
+
     //kakao Login Callback
     private class SessionCallback implements ISessionCallback {
 
@@ -281,7 +292,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("SessionCallback :: ", "onSessionOpenFailed : " + exception.getMessage());
             }
     }
-
 
     // kakao 사용자 정보 요청
     public void requestMe() {
@@ -338,52 +348,83 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //for get kakao user's token for auto login
+    private void requestAccessTokenInfo() {
+        AuthService.getInstance().requestAccessTokenInfo(new ApiResponseCallback<AccessTokenInfoResponse>() {
+            @Override
+            public void onSessionClosed(ErrorResult errorResult) {
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);      //MainActivity로 돌아감.
+            }
 
+            @Override
+            public void onNotSignedUp() {
+                // not happened
+            }
+
+            @Override
+            public void onFailure(ErrorResult errorResult) {
+                Logger.e("failed to get access token info. msg=" + errorResult);
+            }
+
+            @Override
+            public void onSuccess(AccessTokenInfoResponse accessTokenInfoResponse) {
+                long userId = accessTokenInfoResponse.getUserId();
+                Logger.d("this access token is for userId=" + userId);
+                long expiresInMilis = accessTokenInfoResponse.getExpiresInMillis();
+                Logger.d("this access token expires after " + expiresInMilis + " milliseconds.");
+            }
+        });
+    }
+
+    //-----------------http통신을 위한 함수---------------------------------
+    public void makePostData (String lat, String lon){                  //
+        JSONObject currentLocation = new JSONObject();                  //현재 위치에 관한
+        try {                                                           //json 데이터 생성
+            currentLocation.accumulate("lat", initialLatitude);  //
+            currentLocation.accumulate("lon", initialLongitude); //
+        } catch (Exception e) {                                         //
+                                                                        //
+        }                                                               //
+                                                                        //
+                                                                        //
+        OkHttpClient client = new OkHttpClient();                       //okhttp사용을 위한
+        RequestBody jsonBody = RequestBody                              //객체 생성
+                .create(MediaType.parse("application/json")             //
+                , currentLocation.toString());                          //
+                                                                        //
+        Request request = new Request.Builder()                         //post요청을 위한
+                .url("http://14.63.161.4:26531/areaclass")              //객체 생성. 도시 코드
+                .post(jsonBody)                                         //조회
+                .build();                                               //
+        client.newCall(request).enqueue(makePostDataCallBack);          //응답 받을 콜백 함수
+    }                                                                   //설정
+    //----------------------------------------------------------------------
+
+    //--------------------okhttp 콜백 함수---------------------------------------------------------
+    private Callback makePostDataCallBack = new Callback() {                        //
+        @Override                                                                   //
+        public void onFailure(Call call, IOException e) {                           //http 요청
+            Log.d("내 로그", "makePostData 응답 오류 발생");              //실패시 실행
+        }                                                                           //
+                                                                                    //
+        @Override                                                                   //
+        public void onResponse(Call call, Response response) throws IOException {   //http요청
+            final String responseData = response.body().string();                   //성공 시 실행
+            try {                                                                   //응답받은
+                JSONObject result = new JSONObject(responseData);                   //json에서
+                areaCode = result.optInt("largeCd");                         //도시코드 파싱
+            } catch (Exception e) {                                                 //
+                                                                                    //
+            }                                                                       //
+        }                                                                           //
+    };                                                                              //
+    //---------------------------------------------------------------------------------------------
     public void makeNewGpsService() {
         if (gps == null) {
             gps = new GPSTracker(this, myHandler);
         } else {
             gps.Update();
         }
-
-        public void makePostData (String lat, String lon){
-            Log.d("내 로그", "post 들어옴");
-            JSONObject currentLocation = new JSONObject();
-            try {
-                currentLocation.accumulate("lat", initialLatitude);
-                currentLocation.accumulate("lon", initialLongitude);
-            } catch (Exception e) {
-
-            }
-
-
-            OkHttpClient client = new OkHttpClient();
-            RequestBody jsonBody = RequestBody.create(MediaType.parse("application/json")
-                    , currentLocation.toString());
-
-            Request request = new Request.Builder()
-                    .url("http://14.63.161.4:26531/areaclass")
-                    .post(jsonBody)
-                    .build();
-            client.newCall(request).enqueue(makePostDataCallBack);
-        }
-        private Callback makePostDataCallBack = new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.d("내 로그", "오류 발생");
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                final String responseData = response.body().string();
-                try {
-                    JSONObject result = new JSONObject(responseData);
-                    areaCode = result.optInt("largeCd");
-                    Log.d("내 로그", "areaCode" + areaCode);
-                    Log.d("내 로그", "결과" + result.optInt("largeCd"));
-                } catch (Exception e) {
-
-                }
-            }
-        };
     }
+}

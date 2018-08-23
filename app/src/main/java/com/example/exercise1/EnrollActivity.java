@@ -38,15 +38,15 @@ public class EnrollActivity extends AppCompatActivity {
 
         SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
         String getUserID = pref.getString("userId", "X");
-        if(getUserID=="X") {
+        if(getUserID.equals("X")) {
             //서버에 user id 요청 및 등록
             Log.d("저장", "유저아이디 요청POST");
             new SendPostEnroll().execute("http://14.63.161.4:26533/newuser");
         }else{
             Log.d("저장","유저아이디 : "+getUserID);
         }
-        gardText = (TextView) findViewById(R.id.gardText);
-        gardBtn = (Button) findViewById(R.id.gardBtn);
+        gardText = findViewById(R.id.gardText);
+        gardBtn = findViewById(R.id.gardBtn);
 
         gardBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -57,7 +57,7 @@ public class EnrollActivity extends AppCompatActivity {
                     String gard = gardText.getText().toString();
                     Log.d("저장","받은 보호자 전화번호 : "+gard);
                     ed.putString( "gard" , gard);
-                    ed.commit();
+                    ed.apply();
 
                     String getGard = pref.getString("gard", "없음");
                     Log.d("저장테스트","보호자 번호 : "+getGard);
@@ -116,15 +116,13 @@ public class EnrollActivity extends AppCompatActivity {
                     //서버로 부터 데이터를 받음
                     InputStream stream = con.getInputStream();
                     reader = new BufferedReader(new InputStreamReader(stream));
-                    StringBuffer buffer = new StringBuffer();
-                    String line = "";
+                    StringBuilder buffer = new StringBuilder();
+                    String line;
                     while((line = reader.readLine()) != null){
                         buffer.append(line);
                     }
                     return buffer.toString();//서버로 부터 받은 값을 리턴해줌 아마 OK!!가 들어올것임
                 } catch (MalformedURLException e){
-                    e.printStackTrace();
-                } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     if(con != null){
@@ -152,12 +150,12 @@ public class EnrollActivity extends AppCompatActivity {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
                 SharedPreferences.Editor ed = pref.edit();
 
-                if(result== "fail"){
+                if(result.equals("fail")){
                     Log.e("저장","서버오류");
                     Toast.makeText(EnrollActivity.this, "서버 오류", Toast.LENGTH_SHORT).show();
                 }else {
                     ed.putString("userId", result); // value : 저장될 값,
-                    ed.commit();
+                    ed.apply();
                 }
 
                 String getUser = pref.getString("userId", "없음");

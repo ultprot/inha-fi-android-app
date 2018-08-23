@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -32,8 +33,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.kakao.usermgmt.UserManagement;
 import com.kakao.usermgmt.callback.LogoutResponseCallback;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -46,9 +45,6 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Locale;
-
 
 import android.support.v7.app.AlertDialog;
 import com.google.android.gms.common.api.ResultCallback;
@@ -56,7 +52,6 @@ import com.google.android.gms.common.api.Status;
 
 import android.Manifest;
 import android.telephony.SmsManager;
-
 
 public class ExecuteActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
     Button button;
@@ -68,8 +63,8 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
     private int areaCode;
 
-    private FirebaseAuth mAuth;
-    private GoogleApiClient mGoogleApiClient;
+    public FirebaseAuth mAuth;
+    public GoogleApiClient mGoogleApiClient;
 
     private Button mMessage;
     private Button mCall;
@@ -117,51 +112,52 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         // 로그인 작업의 onCreate 메소드에서 FirebaseAuth 개체의 공유 인스턴스를 가져옵니다.
         mAuth = FirebaseAuth.getInstance();
 
-        Button logoutBtn = (Button) findViewById(R.id.logoutBtn);
+        logoutBtn = findViewById(R.id.logoutBtn);
         logoutBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // 서버에 유저정보 삭제 & 앱 file에 저장된 정보 삭제
-                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
+             @Override
+             public void onClick(View v) {
+                 // 서버에 유저정보 삭제 & 앱 file에 저장된 정보 삭제
+                 new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
 
-                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
 
-                String loginWay = pref.getString("login","");
-                if(loginWay == "gogle"){
-                    Log.v("알림", "구글 LOGOUT");
-                    AlertDialog.Builder alt_bld = new AlertDialog.Builder(v.getContext());
-                    alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
-                            .setPositiveButton("네",
-                                    new DialogInterface.OnClickListener() {
+                 String loginWay = pref.getString("login", "");
+                 if (loginWay == "gogle") {
+                     Log.v("알림", "구글 LOGOUT");
+                     AlertDialog.Builder alt_bld = new AlertDialog.Builder(v.getContext());
+                     alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
+                             .setPositiveButton("네",
+                                     new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // 네 클릭
                                             // 로그아웃 함수 call
                                             signOut();
                                         }
-                                    }).setNegativeButton("아니오",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                    // 아니오 클릭. dialog 닫기.
-                                    dialog.cancel();
-                                }
-                            });
-                    AlertDialog alert = alt_bld.create();
-                    // 대화창 클릭시 뒷 배경 어두워지는 것 막기
-                    alert.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-                    // 대화창 제목 설정
-                    alert.setTitle("로그아웃");
-                    // 대화창 아이콘 설정
-                    //alert.setIcon(R.drawable.check_dialog_64);
-                    // 대화창 배경 색 설정
-                    alert.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255, 62, 79, 92)));
-                    alert.show();
-                }else{
-                    //kakaologout 수행
-                    Log.d("알림","카카오 logout");
-                    onClickLogout();
-                }
-
-        Button enrollBtn = (Button) findViewById(R.id.Enroll);
+                             }).setNegativeButton("아니오",
+                             new DialogInterface.OnClickListener() {
+                                 public void onClick(DialogInterface dialog, int id) {
+                                     // 아니오 클릭. dialog 닫기.
+                                     dialog.cancel();
+                                 }
+                             });
+                     AlertDialog alert = alt_bld.create();
+                     // 대화창 클릭시 뒷 배경 어두워지는 것 막기
+                     alert.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                     // 대화창 제목 설정
+                     alert.setTitle("로그아웃");
+                     // 대화창 아이콘 설정
+                     //alert.setIcon(R.drawable.check_dialog_64);
+                     // 대화창 배경 색 설정
+                     alert.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255, 62, 79, 92)));
+                     alert.show();
+                     } else {
+                         //kakaologout 수행
+                         Log.d("알림", "카카오 logout");
+                         onClickLogout();
+                    }
+             }
+        });
+        Button enrollBtn = findViewById(R.id.Enroll);
         enrollBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -170,8 +166,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 startActivity(startIntent);
             }
         });
-        //end speech recognition
-
 
         mMessage = (Button) findViewById(R.id.smsBtn);
         mCall = (Button) findViewById(R.id.callBtn);
@@ -180,7 +174,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
             @Override
             public void onClick(View v) {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                String getGard = pref.getString("gard","");
+                String getGard = pref.getString("gard", "");
                 Messenger messenger = new Messenger(getApplicationContext());
                 messenger.sendMessage(getGard, "위급상황입니다");
             }
@@ -191,22 +185,19 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 startActivity(new Intent("android.intent.action.CALL", Uri.parse("tel:01030159163")));
             }
         });
-
-
     }
-
     //벡버튼 두번눌리면 종료
     @Override
     public void onBackPressed() {
         second_time = System.currentTimeMillis();
-        Toast.makeText(this, "'뒤로' 버튼을 한 번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "'뒤로' 버튼을 한 번 더 누르면 종료됩니다."
+                , Toast.LENGTH_SHORT).show();
         if (second_time - first_time < 2000) {
             super.onBackPressed();
             finishAffinity();
         }
         first_time = System.currentTimeMillis();
     }
-
     private void onClickLogout() {
         UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
             @Override
@@ -257,15 +248,13 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                     //서버로 부터 데이터를 받음
                     InputStream stream = con.getInputStream();
                     reader = new BufferedReader(new InputStreamReader(stream));
-                    StringBuffer buffer = new StringBuffer();
-                    String line = "";
+                    StringBuilder buffer = new StringBuilder();
+                    String line ;
                     while((line = reader.readLine()) != null){
                         buffer.append(line);
                     }
                     return buffer.toString();//서버로 부터 받은 값을 리턴해줌 아마 OK!!가 들어올것임
                 } catch (MalformedURLException e){
-                    e.printStackTrace();
-                } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     if(con != null){
@@ -285,17 +274,16 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
             return null;
         }
 
-
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
 
-            if(result == "fail"){
+            if(result.equals("fail")){
                 Log.d("저장","삭제중 서버오류");
             }else {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
                 SharedPreferences.Editor ed = pref.edit();
                 ed.clear();
-                ed.commit();
+                ed.apply();
 
                 Log.d("저장", "앱 파일 모두 데이터삭제");
 
@@ -368,3 +356,5 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     }
 
 }
+
+

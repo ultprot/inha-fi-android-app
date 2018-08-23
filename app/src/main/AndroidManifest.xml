@@ -38,6 +38,9 @@
             android:value="@string/kakao_app_key" />
         <activity android:name=".ExecuteActivity" />
         <activity android:name=".EnrollActivity"/>
+
+        <service android:name=".InfoService"/>
+        <service android:name=".MainService"/>
     </application>
 
 </manifest>
