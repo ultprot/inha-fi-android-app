@@ -152,6 +152,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                                         public void onClick(DialogInterface dialog, int id) {
                                             // 네 클릭
                                             // 로그아웃 함수 call
+                                            Stop_Period();
                                             signOut();
                                         }
                              }).setNegativeButton("아니오",
@@ -174,7 +175,33 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                      } else {
                          //kakaologout 수행
                          Log.d("알림", "카카오 logout");
-                         onClickLogout();
+                     AlertDialog.Builder alt_bld = new AlertDialog.Builder(v.getContext());
+                     alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
+                             .setPositiveButton("네",
+                                     new DialogInterface.OnClickListener() {
+                                         public void onClick(DialogInterface dialog, int id) {
+                                             // 네 클릭
+                                             // 로그아웃 함수 call
+                                             Stop_Period();
+                                             onClickLogout();
+                                         }
+                                     }).setNegativeButton("아니오",
+                             new DialogInterface.OnClickListener() {
+                                 public void onClick(DialogInterface dialog, int id) {
+                                     // 아니오 클릭. dialog 닫기.
+                                     dialog.cancel();
+                                 }
+                             });
+                     AlertDialog alert = alt_bld.create();
+                     // 대화창 클릭시 뒷 배경 어두워지는 것 막기
+                     alert.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                     // 대화창 제목 설정
+                     alert.setTitle("로그아웃");
+                     // 대화창 아이콘 설정
+                     //alert.setIcon(R.drawable.check_dialog_64);
+                     // 대화창 배경 색 설정
+                     alert.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255, 62, 79, 92)));
+                     alert.show();
                     }
              }
         });
@@ -217,6 +244,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 , Toast.LENGTH_SHORT).show();
         if (second_time - first_time < 2000) {
             super.onBackPressed();
+            Stop_Period();
             finishAffinity();
         }
         first_time = System.currentTimeMillis();
