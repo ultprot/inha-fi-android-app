@@ -205,15 +205,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                     }
              }
         });
-        Button enrollBtn = findViewById(R.id.Enroll);
-        enrollBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent startIntent = new Intent(getApplicationContext(), EnrollActivity.class);
-                startIntent.putExtra("org.examples.ENROLL", "enrolling");
-                startActivity(startIntent);
-            }
-        });
 
         mMessage = (Button) findViewById(R.id.smsBtn);
         mCall = (Button) findViewById(R.id.callBtn);
@@ -339,7 +330,9 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
             @Override
             public void onCompleteLogout() {//로그아웃 성공 시
+                Log.d("알림","kakao로그아웃 성공");
                 Log.e("redirect","in redirect Main Activity");
+                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
                 Intent mainIntent = new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(mainIntent);
             }
@@ -435,7 +428,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         Log.v("알림", "onConnectionFailed");
     }
 
-    // 로그아웃
+    //구글 로그아웃
     public void signOut() {
         mGoogleApiClient.connect();
 
@@ -449,15 +442,12 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                         @Override
                         public void onResult(@NonNull Status status) {
                             if (status.isSuccess()) {
-                                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                                SharedPreferences.Editor editor = pref.edit();
-                                editor.clear();
-                                editor.commit();
+                                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
                                 Log.d("저장","모든 file 기록 삭제");
                                 Log.v("알림", "로그아웃 성공");
                                 setResult(1);
-                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                startActivity(intent);
+                                Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
+                                startActivity(mainIntent);
                             } else {
                                 setResult(0);
                             }
