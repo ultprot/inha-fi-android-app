@@ -45,6 +45,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.support.v7.app.AlertDialog;
 import com.google.android.gms.common.api.ResultCallback;
@@ -56,6 +58,7 @@ import android.telephony.SmsManager;
 public class ExecuteActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
     Button button;
     Button logoutBtn;
+    Button sendDataBtn;
 
     //백버튼 처리를 위한 변수
     long first_time;
@@ -69,8 +72,10 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     private Button mMessage;
     private Button mCall;
     private final int PERMISSIONS_REQUEST_RESULT = 1;
+    Timer timer;
+    int i;
 
-    TextView Path;
+    TextView dataView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +83,22 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         setContentView(R.layout.activity_execute);
         startService(new Intent(ExecuteActivity.this,MainService.class)
                 .putExtra("code",areaCode));
+
+        i=0;
+
+        //data 전송
+        sendDataBtn=findViewById(R.id.sendDataBtn);
+        dataView=findViewById(R.id.dataTextView);
+
+        timer=new Timer();
+        timer.schedule(addTask,0,3000);//0초 후 첫 실행, 3초마다 계속 실행
+
+        sendDataBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View V){
+                Stop_Period();
+            }
+        });
 
         //문자전송
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
@@ -91,7 +112,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         Log.d("기록","이용자 아이디 : "+userId);
         Log.d("기록","이용자 보호자 연락처 : "+gard);
 
-        Path=findViewById(R.id.textView);
+        dataView=findViewById(R.id.dataTextView);
         if(getIntent().hasExtra("code"))
         {
             areaCode=getIntent().getIntExtra("cityCode",-1);
@@ -117,12 +138,12 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
              @Override
              public void onClick(View v) {
                  // 서버에 유저정보 삭제 & 앱 file에 저장된 정보 삭제
-                 new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
+                 //new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
 
                  SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
 
                  String loginWay = pref.getString("login", "");
-                 if (loginWay == "gogle") {
+                 if (loginWay.equals("google")) {
                      Log.v("알림", "구글 LOGOUT");
                      AlertDialog.Builder alt_bld = new AlertDialog.Builder(v.getContext());
                      alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
@@ -182,7 +203,9 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         mCall.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent("android.intent.action.CALL", Uri.parse("tel:01030159163")));
+                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+                String getGard = pref.getString("gard", "");
+                startActivity(new Intent("android.intent.action.CALL", Uri.parse("tel:"+getGard)));
             }
         });
     }
@@ -198,6 +221,92 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         }
         first_time = System.currentTimeMillis();
     }
+
+    TimerTask addTask=new TimerTask() {
+        @Override
+        public void run() {
+            //주기적으로 실행할 작업 추가
+            Log.d("데이터","전송 시작");
+            new SendPostData().execute("http://14.63.161.4:26533/data");
+            i++;
+        }
+    };
+
+    public void Stop_Period(){
+        //Timer 작업 종료
+        if(timer!=null)timer.cancel();
+    }
+
+    public class SendPostData extends  AsyncTask<String,String,String>{
+
+        @Override
+        protected String doInBackground(String... urls) {
+            try {
+                //JSONObject를 만들고 key value 형식으로 값을 저장해준다.
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.accumulate("data", "androidTest");
+                String x = "x";
+                x += String.valueOf(i);
+                String y = "y";
+                y += String.valueOf(i);
+                String z = "z";
+                z += String.valueOf(i);
+                jsonObject.accumulate("X_layer", x);
+                jsonObject.accumulate("Y_layer", y);
+                jsonObject.accumulate("Z_layer", z);
+                Log.d("데이터", "json만들기 완료 : " + jsonObject);
+                HttpURLConnection con = null;
+                BufferedReader reader = null;
+                try {
+                    URL url = new URL(urls[0]);
+                    //연결을 함
+                    con = (HttpURLConnection) url.openConnection();
+                    con.setRequestMethod("POST");//POST방식으로 보냄
+                    con.setRequestProperty("Cache-Control", "no-cache");//캐시 설정
+                    con.setRequestProperty("Content-Type", "application/json");//application JSON 형식으로 전송
+                    con.setRequestProperty("Accept", "text/html");//서버에 response 데이터를 html로 받음
+                    con.setDoOutput(true);//Outstream으로 post 데이터를 넘겨주겠다는 의미
+                    con.setDoInput(true);//Inputstream으로 서버로부터 응답을 받겠다는 의미
+                    con.connect();
+                    //서버로 보내기위해서 스트림 만듬
+                    OutputStream outStream = con.getOutputStream();
+                    //버퍼를 생성하고 넣음
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outStream));
+                    writer.write(jsonObject.toString());
+                    writer.flush();
+                    writer.close();//버퍼를 받아줌
+                    //서버로 부터 데이터를 받음
+                    InputStream stream = con.getInputStream();
+                    reader = new BufferedReader(new InputStreamReader(stream));
+                    StringBuffer buffer = new StringBuffer();
+                    String line = "";
+                    while ((line = reader.readLine()) != null) {
+                        buffer.append(line);
+                    }
+                    return buffer.toString();//서버로 부터 받은 값을 리턴해줌 아마 OK!!가 들어올것임
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                    try {
+                        if (reader != null) {
+                            reader.close();//버퍼를 닫아줌
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
     private void onClickLogout() {
         UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
             @Override
