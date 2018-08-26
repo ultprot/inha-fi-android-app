@@ -152,6 +152,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                                         public void onClick(DialogInterface dialog, int id) {
                                             // 네 클릭
                                             // 로그아웃 함수 call
+                                            Stop_Period();
                                             signOut();
                                         }
                              }).setNegativeButton("아니오",
@@ -174,18 +175,35 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                      } else {
                          //kakaologout 수행
                          Log.d("알림", "카카오 logout");
-                         onClickLogout();
+                     AlertDialog.Builder alt_bld = new AlertDialog.Builder(v.getContext());
+                     alt_bld.setMessage("로그아웃 하시겠습니까?").setCancelable(false)
+                             .setPositiveButton("네",
+                                     new DialogInterface.OnClickListener() {
+                                         public void onClick(DialogInterface dialog, int id) {
+                                             // 네 클릭
+                                             // 로그아웃 함수 call
+                                             Stop_Period();
+                                             onClickLogout();
+                                         }
+                                     }).setNegativeButton("아니오",
+                             new DialogInterface.OnClickListener() {
+                                 public void onClick(DialogInterface dialog, int id) {
+                                     // 아니오 클릭. dialog 닫기.
+                                     dialog.cancel();
+                                 }
+                             });
+                     AlertDialog alert = alt_bld.create();
+                     // 대화창 클릭시 뒷 배경 어두워지는 것 막기
+                     alert.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                     // 대화창 제목 설정
+                     alert.setTitle("로그아웃");
+                     // 대화창 아이콘 설정
+                     //alert.setIcon(R.drawable.check_dialog_64);
+                     // 대화창 배경 색 설정
+                     alert.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255, 62, 79, 92)));
+                     alert.show();
                     }
              }
-        });
-        Button enrollBtn = findViewById(R.id.Enroll);
-        enrollBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent startIntent = new Intent(getApplicationContext(), EnrollActivity.class);
-                startIntent.putExtra("org.examples.ENROLL", "enrolling");
-                startActivity(startIntent);
-            }
         });
 
         mMessage = (Button) findViewById(R.id.smsBtn);
@@ -217,6 +235,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 , Toast.LENGTH_SHORT).show();
         if (second_time - first_time < 2000) {
             super.onBackPressed();
+            Stop_Period();
             finishAffinity();
         }
         first_time = System.currentTimeMillis();
@@ -311,7 +330,9 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
             @Override
             public void onCompleteLogout() {//로그아웃 성공 시
+                Log.d("알림","kakao로그아웃 성공");
                 Log.e("redirect","in redirect Main Activity");
+                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
                 Intent mainIntent = new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(mainIntent);
             }
@@ -407,7 +428,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         Log.v("알림", "onConnectionFailed");
     }
 
-    // 로그아웃
+    //구글 로그아웃
     public void signOut() {
         mGoogleApiClient.connect();
 
@@ -421,15 +442,12 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                         @Override
                         public void onResult(@NonNull Status status) {
                             if (status.isSuccess()) {
-                                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                                SharedPreferences.Editor editor = pref.edit();
-                                editor.clear();
-                                editor.commit();
+                                new SendPostDelete().execute("http://14.63.161.4:26533/deleteuser");
                                 Log.d("저장","모든 file 기록 삭제");
                                 Log.v("알림", "로그아웃 성공");
                                 setResult(1);
-                                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                startActivity(intent);
+                                Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
+                                startActivity(mainIntent);
                             } else {
                                 setResult(0);
                             }
