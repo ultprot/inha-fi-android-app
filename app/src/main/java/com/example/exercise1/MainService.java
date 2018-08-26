@@ -1,6 +1,7 @@
 package com.example.exercise1;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -12,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -73,7 +75,16 @@ public class MainService extends Service {
     public int onStartCommand(Intent intent, int flags,int startId){
         areaCode=intent.getIntExtra("code",-1);
         notificationManager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        builder=new Notification.Builder(this);
+
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
+            NotificationChannel functionChannel=new NotificationChannel("0","functions"
+                    ,NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(functionChannel);
+            builder=new Notification.Builder(this,"0");
+        }else{
+            builder=new Notification.Builder(this);
+        }
+
 
         Intent infoIntent=new Intent("INFO");
         infoIntent.putExtra("action","info");
