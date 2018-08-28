@@ -70,7 +70,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
     private BluetoothSPP bt;
     public MyService mService;
-    TextView receiveText;
+    EditText receiveText;
 
 
     Button button;
