@@ -56,6 +56,7 @@ import android.Manifest;
 import android.telephony.SmsManager;
 
 public class ExecuteActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
+    public static Context mContext;
     Button button;
     Button logoutBtn;
     Button sendDataBtn;
@@ -72,7 +73,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     private Button mMessage;
     private Button mCall;
     private final int PERMISSIONS_REQUEST_RESULT = 1;
-    Timer timer;
+    public Timer timer;
     int i;
 
     TextView dataView;
@@ -84,6 +85,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         startService(new Intent(ExecuteActivity.this,MainService.class)
                 .putExtra("code",areaCode));
 
+        mContext = this;
         i=0;
 
         //data 전송
@@ -235,7 +237,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 , Toast.LENGTH_SHORT).show();
         if (second_time - first_time < 2000) {
             super.onBackPressed();
-            Stop_Period();
             finishAffinity();
         }
         first_time = System.currentTimeMillis();

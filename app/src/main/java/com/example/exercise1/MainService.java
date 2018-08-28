@@ -179,11 +179,14 @@ public class MainService extends Service {
             {
                 unbindService(infoServiceConnection);
             }
+            ((ExecuteActivity)ExecuteActivity.mContext).Stop_Period();
+
             stopService(new Intent(MainService.this,InfoService.class));
             unregisterReceiver(actionReceiver);
             notificationManager.cancel(0);
             stopService(new Intent(MainService.this,MainService.class));
         }
     }
+
 }
 
