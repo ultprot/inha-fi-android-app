@@ -1,8 +1,12 @@
 package com.example.exercise1;
 
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -11,6 +15,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -22,6 +27,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,11 +61,22 @@ import com.google.android.gms.common.api.Status;
 import android.Manifest;
 import android.telephony.SmsManager;
 
+import app.akexorcist.bluetotohspp.library.BluetoothSPP;
+import app.akexorcist.bluetotohspp.library.BluetoothState;
+import app.akexorcist.bluetotohspp.library.DeviceList;
+
 public class ExecuteActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
-    public static Context mContext;
+    public static Context mExecute;
+
+    private BluetoothSPP bt;
+    public MyService mService;
+    TextView receiveText;
+
+
     Button button;
     Button logoutBtn;
     Button sendDataBtn;
+
 
     //백버튼 처리를 위한 변수
     long first_time;
@@ -78,6 +95,23 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
     TextView dataView;
 
+    //블루투스 서비스
+    ServiceConnection sconn = new ServiceConnection() {
+        @Override //서비스가 실행될 때 호출
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MyService.MyBinder myBinder = (MyService.MyBinder) service;
+            mService = myBinder.getService();
+            Log.e("LOG", "onServiceConnected()");
+        }
+
+        @Override //서비스가 종료될 때 호출
+        public void onServiceDisconnected(ComponentName name) {
+            mService = null;
+            //isBind = false;
+            Log.e("LOG", "onServiceDisconnected()");
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,12 +119,65 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         startService(new Intent(ExecuteActivity.this,MainService.class)
                 .putExtra("code",areaCode));
 
-        mContext = this;
+        mExecute = this;
         i=0;
 
         //data 전송
         sendDataBtn=findViewById(R.id.sendDataBtn);
         dataView=findViewById(R.id.dataTextView);
+
+        //블루투스 서비스
+        Log.d("블투 서비스", "액티비티-서비스 시작");
+        Intent intent = new Intent(
+                getApplicationContext(),//현재제어권자
+                MyService.class); // 이동할 컴포넌트
+        startService(intent); // 서비스 시작
+
+        bt = new BluetoothSPP(this); //Initializing
+        receiveText = findViewById(R.id.bluResultText);
+
+        if (!bt.isBluetoothAvailable()) { //블루투스 사용 불가
+            Toast.makeText(getApplicationContext()
+                    , "Bluetooth is not available"
+                    , Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() { //데이터 수신
+            public void onDataReceived(byte[] data, String message) {
+                String aa = "";
+                aa= message + aa;
+                receiveText.setText(aa);
+            }
+        });
+
+        bt.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() { //연결됐을 때
+            public void onDeviceConnected(String name, String address) {
+                Toast.makeText(getApplicationContext()
+                        , "Connected to " + name + "\n" + address
+                        , Toast.LENGTH_SHORT).show();
+            }
+
+            public void onDeviceDisconnected() { //연결해제
+                Toast.makeText(getApplicationContext()
+                        , "Connection lost", Toast.LENGTH_SHORT).show();
+            }
+
+            public void onDeviceConnectionFailed() { //연결실패
+                Toast.makeText(getApplicationContext()
+                        , "Unable to connect", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        //불루투스 연결시도
+        if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
+            bt.disconnect();
+        } else {
+            Intent bluIntent = new Intent(getApplicationContext(), DeviceList.class);
+            startActivityForResult(bluIntent, BluetoothState.REQUEST_CONNECT_DEVICE);
+        }
+        //!블루투스
+
 
         timer=new Timer();
         timer.schedule(addTask,0,3000);//0초 후 첫 실행, 3초마다 계속 실행
@@ -208,26 +295,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
              }
         });
 
-        mMessage = (Button) findViewById(R.id.smsBtn);
-        mCall = (Button) findViewById(R.id.callBtn);
-
-        mMessage.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                String getGard = pref.getString("gard", "");
-                Messenger messenger = new Messenger(getApplicationContext());
-                messenger.sendMessage(getGard, "위급상황입니다");
-            }
-        });
-        mCall.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-                String getGard = pref.getString("gard", "");
-                startActivity(new Intent("android.intent.action.CALL", Uri.parse("tel:"+getGard)));
-            }
-        });
     }
     //벡버튼 두번눌리면 종료
     @Override
@@ -242,6 +309,61 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         first_time = System.currentTimeMillis();
     }
 
+//블루투스
+    public void onDestroy() {
+        Log.e("LOG", "onDestroy()");
+        super.onDestroy();
+        //bt.stopService(); //블루투스 중지
+    }
+
+    public void onStart() {
+        super.onStart();
+        if (!bt.isBluetoothEnabled()) { //
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intent, BluetoothState.REQUEST_ENABLE_BT);
+        } else {
+            if (!bt.isServiceAvailable()) {
+                bt.setupService();
+                bt.startService(BluetoothState.DEVICE_OTHER); //DEVICE_ANDROID는 안드로이드 기기 끼리
+                setup();
+            }
+        }
+    }
+
+    public void setup() {
+        bt.send("S", true);
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
+            if (resultCode == Activity.RESULT_OK)
+                bt.connect(data);
+        } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
+            if (resultCode == Activity.RESULT_OK) {
+                bt.setupService();
+                bt.startService(BluetoothState.DEVICE_OTHER);
+                setup();
+            } else {
+                Toast.makeText(getApplicationContext()
+                        , "Bluetooth was not enabled."
+                        , Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+    //!블루투스
+
+    //블루투스 서비스 종료
+    public void onStopBluService() {
+        Log.d("블투 서비스", "액티비티-서비스 종료");
+        Intent intent = new Intent(
+                getApplicationContext(),//현재제어권자
+                MyService.class); // 이동할 컴포넌트
+        stopService(intent); // 서비스 종료
+    }
+    //!블루투스 서비스
+
+    //타이머 for 데이터 서버로 전송
     TimerTask addTask=new TimerTask() {
         @Override
         public void run() {
@@ -251,7 +373,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
             i++;
         }
     };
-
+    //타이머 for 서버로 전송 stop
     public void Stop_Period(){
         //Timer 작업 종료
         if(timer!=null)timer.cancel();

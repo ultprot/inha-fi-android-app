@@ -179,7 +179,7 @@ public class MainService extends Service {
             {
                 unbindService(infoServiceConnection);
             }
-            ((ExecuteActivity)ExecuteActivity.mContext).Stop_Period();
+            ((ExecuteActivity)ExecuteActivity.mExecute).Stop_Period();
 
             stopService(new Intent(MainService.this,InfoService.class));
             unregisterReceiver(actionReceiver);
