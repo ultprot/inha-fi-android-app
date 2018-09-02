@@ -105,13 +105,14 @@
         android:text="Data"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.837"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dataTextView"
         app:layout_constraintVertical_bias="0.163" />
 
     <EditText
         android:id="@+id/bluResultText"
-        android:layout_width="122dp"
+        android:layout_width="230dp"
         android:layout_height="45dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
@@ -119,13 +120,27 @@
         android:layout_marginTop="8dp"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="블루투스"
+        android:textSize="12sp"
         app:layout_constraintBottom_toTopOf="@+id/smsBtn"
         app:layout_constraintEnd_toStartOf="@+id/sendDataBtn"
         app:layout_constraintHorizontal_bias="0.8"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/dataTextView"
         app:layout_constraintVertical_bias="0.833" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/sendDataBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dataTextView" />
 
 </android.support.constraint.ConstraintLayout>
 

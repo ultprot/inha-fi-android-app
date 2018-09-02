@@ -69,8 +69,14 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     public static Context mExecute;
 
     private BluetoothSPP bt;
-    public MyService mService;
     EditText receiveText;
+    TextView bluText;
+    String gX;  //자이로센서 값 x,y,z축 변수
+    String gY;
+    String gZ;
+    String acX; //가속도센서 값 x,y,z축 변수
+    String acY;
+    String acZ;
 
 
     Button button;
@@ -95,22 +101,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
     TextView dataView;
 
-    //블루투스 서비스
-    ServiceConnection sconn = new ServiceConnection() {
-        @Override //서비스가 실행될 때 호출
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MyService.MyBinder myBinder = (MyService.MyBinder) service;
-            mService = myBinder.getService();
-            Log.e("LOG", "onServiceConnected()");
-        }
-
-        @Override //서비스가 종료될 때 호출
-        public void onServiceDisconnected(ComponentName name) {
-            mService = null;
-            //isBind = false;
-            Log.e("LOG", "onServiceDisconnected()");
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,44 +116,66 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         sendDataBtn=findViewById(R.id.sendDataBtn);
         dataView=findViewById(R.id.dataTextView);
 
-        //블루투스 서비스
-        Log.d("블투 서비스", "액티비티-서비스 시작");
-        Intent intent = new Intent(
-                getApplicationContext(),//현재제어권자
-                MyService.class); // 이동할 컴포넌트
-        startService(intent); // 서비스 시작
-
+        //블루투스
         bt = new BluetoothSPP(this); //Initializing
         receiveText = findViewById(R.id.bluResultText);
+        bluText = findViewById(R.id.textView);
 
         if (!bt.isBluetoothAvailable()) { //블루투스 사용 불가
+            Log.e("블투","사용불가");
             Toast.makeText(getApplicationContext()
                     , "Bluetooth is not available"
                     , Toast.LENGTH_SHORT).show();
             finish();
         }
 
-        bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() { //데이터 수신
+        //데이터 수신
+        bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
             public void onDataReceived(byte[] data, String message) {
+                Log.d("블투수신","데이터수신중");
                 String aa = "";
                 aa= message + aa;
+                Log.d("블투수신","수신 데이터 : "+aa);
+                try{
+                    JSONObject json = new JSONObject(aa);
+                    gX=json.getString("angleX");
+                    gY=json.getString("angleY");
+                    gZ = json.getString("angleZ");
+                    acX=json.getString("accX");
+                    acY=json.getString("accY");
+                    acZ=json.getString("accZ");
+                    Log.d("블투수신","자이로 : "+gX + ","+ gY+","+gZ);
+                    Log.d("블투수신","가속도 : "+acX+","+acY+","+acZ);
+
+                    Log.d("데이터","전송 시작");
+                    new SendPostData().execute("http://14.63.161.4:26533/data");
+
+                }catch (Exception err){
+                    Log.e("블투","json도중 에러");
+                }
                 receiveText.setText(aa);
             }
         });
 
-        bt.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() { //연결됐을 때
+        //연결됐을 때
+        bt.setBluetoothConnectionListener(new BluetoothSPP.BluetoothConnectionListener() {
             public void onDeviceConnected(String name, String address) {
+                Log.d("블투","연결완료"+name);
                 Toast.makeText(getApplicationContext()
                         , "Connected to " + name + "\n" + address
                         , Toast.LENGTH_SHORT).show();
             }
 
-            public void onDeviceDisconnected() { //연결해제
+            //연결해제
+            public void onDeviceDisconnected() {
+                Log.d("블투","연결해제");
                 Toast.makeText(getApplicationContext()
                         , "Connection lost", Toast.LENGTH_SHORT).show();
             }
 
-            public void onDeviceConnectionFailed() { //연결실패
+            //연결실패
+            public void onDeviceConnectionFailed() {
+                Log.e("블투","연결실패");
                 Toast.makeText(getApplicationContext()
                         , "Unable to connect", Toast.LENGTH_SHORT).show();
             }
@@ -171,23 +183,15 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
         //불루투스 연결시도
         if (bt.getServiceState() == BluetoothState.STATE_CONNECTED) {
+            Log.e("블투","연결시도 if");
             bt.disconnect();
         } else {
+            Log.e("블투","연결시도 else");
             Intent bluIntent = new Intent(getApplicationContext(), DeviceList.class);
             startActivityForResult(bluIntent, BluetoothState.REQUEST_CONNECT_DEVICE);
         }
-        //!블루투스
+    //!블루투스
 
-
-        timer=new Timer();
-        timer.schedule(addTask,0,3000);//0초 후 첫 실행, 3초마다 계속 실행
-
-        sendDataBtn.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View V){
-                Stop_Period();
-            }
-        });
 
         //문자전송
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
@@ -201,7 +205,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         Log.d("기록","이용자 아이디 : "+userId);
         Log.d("기록","이용자 보호자 연락처 : "+gard);
 
-        dataView=findViewById(R.id.dataTextView);
         if(getIntent().hasExtra("code"))
         {
             areaCode=getIntent().getIntExtra("cityCode",-1);
@@ -241,7 +244,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                                         public void onClick(DialogInterface dialog, int id) {
                                             // 네 클릭
                                             // 로그아웃 함수 call
-                                            Stop_Period();
                                             signOut();
                                         }
                              }).setNegativeButton("아니오",
@@ -271,7 +273,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                                          public void onClick(DialogInterface dialog, int id) {
                                              // 네 클릭
                                              // 로그아웃 함수 call
-                                             Stop_Period();
                                              onClickLogout();
                                          }
                                      }).setNegativeButton("아니오",
@@ -311,12 +312,13 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
 //블루투스
     public void onDestroy() {
-        Log.e("LOG", "onDestroy()");
+        Log.e("블투", "onDestroy()");
         super.onDestroy();
         //bt.stopService(); //블루투스 중지
     }
 
     public void onStart() {
+        Log.e("블투","onStart()");
         super.onStart();
         if (!bt.isBluetoothEnabled()) { //
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -331,10 +333,12 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     }
 
     public void setup() {
+        Log.e("블투","on setup");
         bt.send("S", true);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.e("블투","on onActivityResult");
         if (requestCode == BluetoothState.REQUEST_CONNECT_DEVICE) {
             if (resultCode == Activity.RESULT_OK)
                 bt.connect(data);
@@ -353,31 +357,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     }
     //!블루투스
 
-    //블루투스 서비스 종료
-    public void onStopBluService() {
-        Log.d("블투 서비스", "액티비티-서비스 종료");
-        Intent intent = new Intent(
-                getApplicationContext(),//현재제어권자
-                MyService.class); // 이동할 컴포넌트
-        stopService(intent); // 서비스 종료
-    }
-    //!블루투스 서비스
-
-    //타이머 for 데이터 서버로 전송
-    TimerTask addTask=new TimerTask() {
-        @Override
-        public void run() {
-            //주기적으로 실행할 작업 추가
-            Log.d("데이터","전송 시작");
-            new SendPostData().execute("http://14.63.161.4:26533/data");
-            i++;
-        }
-    };
-    //타이머 for 서버로 전송 stop
-    public void Stop_Period(){
-        //Timer 작업 종료
-        if(timer!=null)timer.cancel();
-    }
 
     public class SendPostData extends  AsyncTask<String,String,String>{
 
@@ -387,16 +366,14 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 //JSONObject를 만들고 key value 형식으로 값을 저장해준다.
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.accumulate("data", "androidTest");
-                String x = "x";
-                x += String.valueOf(i);
-                String y = "y";
-                y += String.valueOf(i);
-                String z = "z";
-                z += String.valueOf(i);
-                jsonObject.accumulate("X_layer", x);
-                jsonObject.accumulate("Y_layer", y);
-                jsonObject.accumulate("Z_layer", z);
+                jsonObject.accumulate("X_g", gX);   //자이로값
+                jsonObject.accumulate("Y_g", gY);
+                jsonObject.accumulate("Z_g", gZ);
+                jsonObject.accumulate("X_a",acX);   //가속도값
+                jsonObject.accumulate("Y_a",acY);
+                jsonObject.accumulate("Z_a",acZ);
                 Log.d("데이터", "json만들기 완료 : " + jsonObject);
+
                 HttpURLConnection con = null;
                 BufferedReader reader = null;
                 try {
