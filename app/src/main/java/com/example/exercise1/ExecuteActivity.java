@@ -70,7 +70,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
 
     private BluetoothSPP bt;
     EditText receiveText;
-    TextView bluText;
     String gX;  //자이로센서 값 x,y,z축 변수
     String gY;
     String gZ;
@@ -119,7 +118,6 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         //블루투스
         bt = new BluetoothSPP(this); //Initializing
         receiveText = findViewById(R.id.bluResultText);
-        bluText = findViewById(R.id.textView);
 
         if (!bt.isBluetoothAvailable()) { //블루투스 사용 불가
             Log.e("블투","사용불가");
@@ -153,7 +151,8 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                 }catch (Exception err){
                     Log.e("블투","json도중 에러");
                 }
-                receiveText.setText(aa);
+
+                receiveText.setText("자이로:"+gX + ","+ gY+","+gZ+"가속도:"+acX+","+acY+","+acZ);
             }
         });
 
