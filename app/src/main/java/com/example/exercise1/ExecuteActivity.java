@@ -76,11 +76,12 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     String acX; //가속도센서 값 x,y,z축 변수
     String acY;
     String acZ;
+    Button sendDataBtn;
+    boolean dataB;
 
 
     Button button;
     Button logoutBtn;
-    Button sendDataBtn;
 
 
     //백버튼 처리를 위한 변수
@@ -146,7 +147,18 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                     Log.d("블투수신","가속도 : "+acX+","+acY+","+acZ);
 
                     Log.d("데이터","전송 시작");
-                    new SendPostData().execute("http://14.63.161.4:26533/data");
+
+                    dataB=true;
+                    sendDataBtn = (Button)findViewById(R.id.sendDataBtn);
+                    sendDataBtn.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dataB=false;
+                            new SendPostData().execute("http://14.63.161.4:26533/dataEmer");
+                        }
+                    });
+                    if(dataB==true)
+                        new SendPostData().execute("http://14.63.161.4:26533/data");
 
                 }catch (Exception err){
                     Log.e("블투","json도중 에러");
