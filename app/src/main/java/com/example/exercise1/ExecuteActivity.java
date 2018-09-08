@@ -76,8 +76,11 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
     String acX; //가속도센서 값 x,y,z축 변수
     String acY;
     String acZ;
+    String bpm;
     Button sendDataBtn;
+    Button stopBtn;
     boolean dataB;
+    boolean stopB;
 
 
     Button button;
@@ -128,6 +131,8 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
             finish();
         }
 
+        dataB=true;
+        stopB=false;
         //데이터 수신
         bt.setOnDataReceivedListener(new BluetoothSPP.OnDataReceivedListener() {
             public void onDataReceived(byte[] data, String message) {
@@ -143,28 +148,40 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
                     acX=json.getString("accX");
                     acY=json.getString("accY");
                     acZ=json.getString("accZ");
+                    bpm=json.getString("BPM");
                     Log.d("블투수신","자이로 : "+gX + ","+ gY+","+gZ);
                     Log.d("블투수신","가속도 : "+acX+","+acY+","+acZ);
+                    Log.d("블투수신","심박 : " + bpm);
 
                     Log.d("데이터","전송 시작");
 
-                    dataB=true;
                     sendDataBtn = (Button)findViewById(R.id.sendDataBtn);
                     sendDataBtn.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            dataB=false;
-                            new SendPostData().execute("http://14.63.161.4:26533/dataEmer");
+                            dataB = !dataB;
+                            String B = ((dataB == true) ? "okay" : "accident!");
+                            dataView.setText(B);
                         }
                     });
-                    if(dataB==true)
-                        new SendPostData().execute("http://14.63.161.4:26533/data");
-
+                    stopBtn = (Button)findViewById(R.id.stopBtn);
+                    stopBtn.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            stopB = !stopB;
+                        }
+                    });
+                    if(stopB == false) {
+                        if (dataB == true)
+                            new SendPostData().execute("http://14.63.161.4:26533/data");
+                        else
+                            new SendPostData().execute("http://14.63.161.4:26533/dataEmer");
+                    }
                 }catch (Exception err){
                     Log.e("블투","json도중 에러");
                 }
 
-                receiveText.setText("자이로:"+gX + ","+ gY+","+gZ+"가속도:"+acX+","+acY+","+acZ);
+                receiveText.setText("자이로:"+gX + ","+ gY+","+gZ+"가속도:"+acX+","+acY+","+acZ+" 심박 : "+bpm);
             }
         });
 
@@ -356,6 +373,7 @@ public class ExecuteActivity extends AppCompatActivity implements GoogleApiClien
         } else if (requestCode == BluetoothState.REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
                 bt.setupService();
+
                 bt.startService(BluetoothState.DEVICE_OTHER);
                 setup();
             } else {
