@@ -3,6 +3,7 @@ package com.example.exercise1;
 import android.Manifest;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -93,6 +94,7 @@ public class InfoService extends Service {
             jsonObject.accumulate("lat",lat);
             jsonObject.accumulate("lon",lon);
             jsonObject.accumulate("areaCode",code);
+            Log.d("post보낼 도시코드",String.valueOf(code));
             if(lastIntent!=null){
                 jsonObject.accumulate("sessionID",lastSessionID);
                 if(lastIntent.equals("destination_poi_select")){
@@ -242,24 +244,85 @@ public class InfoService extends Service {
                         }
                     }
                 }else if(lastIntent.equals("destination_path_select")){
+                    String temp="";
                     switch(lastjson.optString("transportation")){
                         case "s":
                             buspath=null;
                             intepath=null;
-                            Toast.makeText(getApplicationContext()
-                                    ,subwaypath.toString(),Toast.LENGTH_SHORT).show();
+                            try{
+                                JSONArray subSubPath=subwaypath.getJSONArray("subPath");
+                                for(int i=0;i<subSubPath.length();i++){
+                                    try{
+                                        if(subSubPath.getJSONObject(i).optInt("trafficType")==1)
+                                        {
+                                            temp+=subSubPath.getJSONObject(i).getJSONArray("lane")
+                                                    .getJSONObject(0).getString("name");
+                                            temp+=subSubPath.getJSONObject(i).getString("startName");
+                                            temp+="승차 ";
+                                        }
+                                    }catch(JSONException e){
+
+                                    }
+                                }
+                            }catch(JSONException e){
+
+                            }
+                            ffText=temp;
                             break;
                         case "b":
                             subwaypath=null;
                             intepath=null;
-                            Toast.makeText(getApplicationContext()
-                                    ,buspath.toString(),Toast.LENGTH_SHORT).show();
+                            try{
+                                JSONArray busSubPath=buspath.getJSONArray("subPath");
+                                for(int i=0;i<busSubPath.length();i++){
+                                    try{
+                                        if(busSubPath.getJSONObject(i).optInt("trafficType")==2)
+                                        {
+                                            temp+=busSubPath.getJSONObject(i).optString("startName");
+                                            temp+=" 정류장에서 ";
+                                            temp+=busSubPath.getJSONObject(i).getJSONArray("lane")
+                                                    .getJSONObject(0).getString("busNo");
+                                            temp+=" 번 버스에 승차 ";
+                                        }
+                                    }catch(JSONException e){
+
+                                    }
+                                }
+                            }catch(JSONException e){
+
+                            }
+                            ffText=temp;
                             break;
                         case "m":
                             buspath=null;
                             subwaypath=null;
-                            Toast.makeText(getApplicationContext()
-                                    ,intepath.toString(),Toast.LENGTH_SHORT).show();
+                            try{
+                                JSONArray inteSubPath=intepath.getJSONArray("subPath");
+                                for(int i=0;i<inteSubPath.length();i++){
+                                    try{
+                                        if(inteSubPath.getJSONObject(i).optInt("trafficType")==2)
+                                        {
+                                            temp+=inteSubPath.getJSONObject(i).optString("startName");
+                                            temp+=" 정류장에서 ";
+                                            temp+=inteSubPath.getJSONObject(i).getJSONArray("lane")
+                                                    .getJSONObject(0).getString("busNo");
+                                            temp+=" 번 버스에 승차";
+                                        }
+                                        else if (inteSubPath.getJSONObject(i).optInt("trafficType")==1)
+                                        {
+                                            temp+=inteSubPath.getJSONObject(i).getJSONArray("lane")
+                                                    .getJSONObject(0).getString("name");
+                                            temp+=inteSubPath.getJSONObject(i).getString("startName");
+                                            temp+="승차 ";
+                                        }
+                                    }catch(JSONException e){
+
+                                    }
+                                }
+                            }catch(JSONException e){
+
+                            }
+                            ffText=temp;
                             break;
                     }
                     lastIntent=null;
@@ -270,8 +333,20 @@ public class InfoService extends Service {
                 }
                 else if(lastIntent.equals("pedes_search")){
                     pedespath=lastjson;
-                    Toast.makeText(getApplicationContext()
-                            ,pedespath.toString(),Toast.LENGTH_SHORT);
+                    Log.d("왜!","pedes 들어옴.");
+                    //Toast.makeText(getApplicationContext()
+                    //        ,pedespath.toString(),Toast.LENGTH_SHORT);
+                    String temp="";
+                    Log.d("왜!!",pedespath.toString());
+                    for(int i=0;i<pedespath.optJSONArray("features").length();i++)
+                    {
+                        if(pedespath.optJSONArray("features").optJSONObject(i).optJSONObject("geometry").optString("type").equals("Point"))
+                        {
+                            temp+=pedespath.optJSONArray("features").optJSONObject(i).optJSONObject("properties").optString("description");
+                            temp+=".";
+                        }
+                    }
+                    ffText=temp;
                     lastIntent=null;
                     lastSessionID=null;
                     lastpois=null;
@@ -493,7 +568,9 @@ public class InfoService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-        areaCode=intent.getIntExtra("code",-1);
+        SharedPreferences prefor = getSharedPreferences("prefor", MODE_PRIVATE);
+        areaCode=prefor.getInt("code",-1);
+        Log.d("Info 도시코드",String.valueOf(areaCode));
         return super.onStartCommand(intent,flags,startId);
     }
 
@@ -519,6 +596,7 @@ public class InfoService extends Service {
         Log.d("내 로그","듣기 직전");
 
         mySpeechRecognizer.startListening(intent);
+
     }
 
     public void makeNewGpsService(){    //gps사용을 위한 서비스 생성
